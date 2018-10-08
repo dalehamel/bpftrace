@@ -1,0 +1,8 @@
+#!/bin/bash
+
+IMG="gcr.io/shopify-docker-images/apps/production/bpftrace-shopify:${BUILDKITE_COMMIT}"
+
+wget https://storage.googleapis.com/containeros_builds/bpftrace
+chmod +x bpftrace
+
+docker build -t "${IMG}" .

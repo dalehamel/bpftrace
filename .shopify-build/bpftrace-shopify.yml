@@ -1,10 +1,19 @@
 containers:
+  production:
+    environment: production
+    workdir: /
+    build:
+      command: pipa build -x --push -- ./shopify/docker-static-image
+      timeout: 10m
   bionic:
     docker: ubuntu:18.04
+  alpine:
+    docker: alpine:3.8
 #  packagecloud:
 #    docker: gcr.io/shopify-docker-images/ci-branches/ci/packagecloud:97c5a43ff3b5dc0658d8618afcbc91a694365477
 
 steps:
+- build: production
 - label: Build cmake package
   timeout: 60m
   container: bionic
@@ -15,6 +24,17 @@ steps:
   - /app/shopify/build.sh
   artifact_paths:
   - /artifacts
+- label: Build static binary
+  timeout: 60m
+  container: alpine
+  git:
+    history: true
+  run:
+  - /app/shopify/alpine-build.sh
+  - cp /app/build/src/bpftrace /artifacts/
+  artifact_paths:
+  - /artifacts
+
 
 #- wait
 #

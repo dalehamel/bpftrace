@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/bin/bash -e
 
 set -x
 
-apt-get update && apt-get install -y wget
+apt-get update && apt-get install -y wget gnupg
 
 wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
 cat <<EOF | tee -a /etc/apt/sources.list
