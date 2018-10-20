@@ -18,6 +18,3 @@ make install
 find /usr/local/
 
 tar -cpvzf /artifacts/bpftrace.tar /usr/local/bpftrace
-set +e
-
-[ "$1" == "static" ] && cp -r /usr/local/ /artifacts/
