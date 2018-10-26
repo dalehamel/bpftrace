@@ -31,11 +31,11 @@ steps:
     history: true
   run:
   - /app/shopify/alpine-build.sh
-  - cp /app/build/src/bpftrace /artifacts/
+  - cp /app/build/src/bpftrace /artifacts/bpftrace_static
+  - chmod +x /artifacts/bpftrace_static
+  - gzip /artifacts/bpftrace_static
   artifact_paths:
   - /artifacts
-
-
 #- wait
 #
 #- label: Publish to Packagecloud
