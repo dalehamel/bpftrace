@@ -43,7 +43,7 @@ steps:
   container: alpine
   import_artifacts:
   - pattern: bpftrace_test
-    into: /
+    into: /test
   run:
-  - chmod +x /bpftrace_test
-  - /bpftrace_test --gtest_filter=-codegen*
+  - chmod +x /test/bpftrace_test
+  - /test/bpftrace_test --gtest_filter=-codegen*
