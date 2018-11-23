@@ -46,4 +46,4 @@ steps:
     into: /
   run:
   - chmod +x /bpftrace_test
-  - /bpftrace_test
+  - /bpftrace_test --gtest_filter=-codegen*
