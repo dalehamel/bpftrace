@@ -19,6 +19,6 @@ ln -s /usr/include/llvm5/llvm-c /usr/include/llvm-c
 
 mkdir -p /app/build && cd /app/build
 
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local/bpftrace -DSTATIC_LINKING:BOOL=ON ..
+cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=/usr/local/bpftrace -DSTATIC_LINKING:BOOL=ON ..
 make -j$(nproc)
 make install
