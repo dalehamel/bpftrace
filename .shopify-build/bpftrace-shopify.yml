@@ -9,8 +9,6 @@ containers:
     docker: ubuntu:18.04
   alpine:
     docker: alpine:3.8
-#  packagecloud:
-#    docker: gcr.io/shopify-docker-images/ci-branches/ci/packagecloud:97c5a43ff3b5dc0658d8618afcbc91a694365477
 
 steps:
 - build: production
@@ -32,19 +30,20 @@ steps:
   run:
   - /app/shopify/alpine-build.sh
   - cp /app/build/src/bpftrace /artifacts/bpftrace_static
+  - cp /app/build/tests/bpftrace_test /artifacts/bpftrace_test
   - chmod +x /artifacts/bpftrace_static
+  - chmod +x /artifacts/bpftrace_test
   - gzip /artifacts/bpftrace_static
   artifact_paths:
   - /artifacts
-#- wait
-#
-#- label: Publish to Packagecloud
-#  timeout: 5m
-#  container: packagecloud
-#  run:
-#  - ls -l debs
-#  - FLAVOUR=ubuntu publish_debs debs bionic shopify/public
-#  import_artifacts:
-#  - pattern: '*.deb'
-#    into: debs
-#  branches: master
+
+- wait
+
+- label: Run test binary
+  container: alpine
+  import_artifacts:
+  - pattern: bpftrace_test
+    into: /
+  run:
+  - chmod +x /bpftrace_test
+  - /bpftrace_test
