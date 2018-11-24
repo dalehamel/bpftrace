@@ -41,6 +41,7 @@ steps:
 
 - label: Run test binary
   container: alpine
+  timeout: 10m
   import_artifacts:
   - pattern: bpftrace_test
     into: /test
