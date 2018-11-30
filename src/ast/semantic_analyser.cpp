@@ -401,6 +401,17 @@ void SemanticAnalyser::visit(Variable &var)
   }
 }
 
+void SemanticAnalyser::visit(ArrayIndex &arr)
+{
+  arr.expr->accept(*this);
+
+  SizedType &type = arr.expr->type;
+  if (is_final_pass() && !(type.type == Type::array))
+    err_ << "The array index operator [] can only be used on arrays." << std::endl;
+
+  arr.type = SizedType(type.type, type.pointee_size);
+}
+
 void SemanticAnalyser::visit(Binop &binop)
 {
   binop.left->accept(*this);

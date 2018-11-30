@@ -859,6 +859,14 @@ void CodegenLLVM::visit(FieldAccess &acc)
       // pointer internally and dereference later when necessary.
       expr_ = src;
     }
+    else if (field.type.type == Type::array)
+    {
+      // For array types, we want to just pass pointer along,
+      // since the offset of the field should be the start of the array.
+      // The pointer will be dereferenced when the array is accessed
+      // with an index operation.
+      expr_ = src;
+    }
     else if (field.type.type == Type::string)
     {
       AllocaInst *dst = b_.CreateAllocaBPF(field.type, type.cast_type + "." + acc.field);
@@ -873,6 +881,23 @@ void CodegenLLVM::visit(FieldAccess &acc)
       b_.CreateLifetimeEnd(dst);
     }
   }
+}
+
+void CodegenLLVM::visit(ArrayIndex &arr)
+{
+  // Prepare output buffer
+  SizedType &type = arr.expr->type;
+  AllocaInst *buf = b_.CreateAllocaBPF(b_.GetType(type), "array_index");
+  b_.CreateMemSet(buf, b_.getInt8(0), type.size, 1);
+  Value *value_offset = b_.CreateGEP(buf, b_.getInt8(0));
+  // Read the argument
+  arr.expr->accept(*this);
+ // Value *array_offset = b_.CreateGEP(expr_, {b_.getInt8(0), b_.getInt8(arr.index * type.size)}); // FIXME, check size modulo 8 bytes
+ // Value *array_value = b_.CreateLoad(b_.GetType(type), array_offset);
+
+  // Store the value, update expr address to where we stored it
+  //b_.CreateStore(array_value, value_offset);
+  expr_ = buf;
 }
 
 void CodegenLLVM::visit(Cast &cast)

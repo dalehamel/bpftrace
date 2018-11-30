@@ -26,7 +26,8 @@ bool SizedType::operator==(const SizedType &t) const
 
 bool SizedType::IsArray() const
 {
-  return type == Type::string || type == Type::usym || (type == Type::cast && !is_pointer);
+  return type == Type::array || type == Type::string ||
+         type == Type::usym || (type == Type::cast && !is_pointer);
 }
 
 std::string typestr(Type t)
