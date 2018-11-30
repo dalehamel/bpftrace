@@ -406,9 +406,13 @@ void SemanticAnalyser::visit(ArrayIndex &arr)
   arr.expr->accept(*this);
 
   SizedType &type = arr.expr->type;
+
   if (is_final_pass() && !(type.type == Type::array))
     err_ << "The array index operator [] can only be used on arrays." << std::endl;
 
+  // FIXME add sanity check for array bounds here
+  // FIXME setting the type to array here is a bit misleading
+  //       but we have no way of accessing pointee type... yet?
   arr.type = SizedType(type.type, type.pointee_size);
 }
 

@@ -112,9 +112,9 @@ public:
 
 class ArrayIndex : public Expression {
 public:
-  ArrayIndex(Expression *expr, Expression *index) : expr(expr), index(index) { }
+  ArrayIndex(Expression *expr, int index) : expr(expr), index(index) { }
   Expression *expr;
-  Expression *index;
+  int index;
 
   void accept(Visitor &v) override;
 };

@@ -892,11 +892,11 @@ void CodegenLLVM::visit(ArrayIndex &arr)
   Value *value_offset = b_.CreateGEP(buf, b_.getInt8(0));
   // Read the argument
   arr.expr->accept(*this);
- // Value *array_offset = b_.CreateGEP(expr_, {b_.getInt8(0), b_.getInt8(arr.index * type.size)}); // FIXME, check size modulo 8 bytes
- // Value *array_value = b_.CreateLoad(b_.GetType(type), array_offset);
+  Value *array_offset = b_.CreateGEP(expr_, {b_.getInt8(0), b_.getInt8(arr.index * type.size)}); // FIXME, check size modulo 8 bytes
+  Value *array_value = b_.CreateLoad(b_.GetType(type), array_offset);
 
   // Store the value, update expr address to where we stored it
-  //b_.CreateStore(array_value, value_offset);
+  b_.CreateStore(array_value, value_offset);
   expr_ = buf;
 }
 
