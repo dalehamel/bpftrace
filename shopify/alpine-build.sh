@@ -3,6 +3,7 @@ apk add --update \
   build-base \
   clang-dev \
   clang-static \
+  curl \
   cmake \
   elfutils-dev \
   flex-dev \
