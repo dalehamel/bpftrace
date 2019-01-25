@@ -20,5 +20,6 @@ EOF
 apt-get update
 apt-get install -y bison cmake flex g++ git libelf-dev zlib1g-dev libfl-dev
 apt-get install -y clang-5.0 libclang-5.0-dev libclang-common-5.0-dev libclang1-5.0 libllvm5.0 llvm-5.0 llvm-5.0-dev llvm-5.0-runtime
+apt-get install -y libbpfcc-dev
 
 apt-get --reinstall install -y libc6 libc6-dev
