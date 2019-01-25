@@ -11,6 +11,7 @@ apk add --update \
   linux-headers \
   llvm5-dev \
   llvm5-static \
+  python \
   zlib-dev
 
 # Put LLVM directories where CMake expects them to be
@@ -20,11 +21,9 @@ ln -s /usr/include/llvm5/llvm-c /usr/include/llvm-c
 
 # Alpine currently does not have a package for bcc. Until they do,
 # we'll peg the alpine build to bcc v0.8.0
-#
-# We're building here so docker can cache the build layer
 curl -L https://github.com/iovisor/bcc/archive/v0.8.0.tar.gz --output /bcc.tar.gz
-tar xvf /bcc.tar.gz
-mv bcc-0.8.0 bcc
+tar -xpf /bcc.tar.gz -C /
+mv /bcc-0.8.0 /bcc
 cd /bcc && mkdir build && cd build && cmake .. && make install -j4 && \
   cp src/cc/libbcc.a /usr/local/lib64/libbcc.a && \
   cp src/cc/libbcc-loader-static.a /usr/local/lib64/libbcc-loader-static.a && \
