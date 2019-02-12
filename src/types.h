@@ -109,6 +109,7 @@ public:
   std::string orig_name;	// original full probe name,
 				// before wildcard expansion
   std::string name;		// full probe name
+  std::string ns;		// for USDT probes, if not from path // FIXME - this is kinda ugly...
   uint64_t loc;			// for USDT probes
   int index = 0;
   int freq;
