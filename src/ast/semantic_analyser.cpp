@@ -471,7 +471,7 @@ void SemanticAnalyser::visit(Variable &var)
     var.type = search_val->second;
   }
   else {
-    err_ << "Undefined variable: " << var.ident << std::endl;
+    err_ << "Undefined or undeclared variable: " << var.ident << std::endl;
     var.type = SizedType(Type::none, 0);
   }
 }
@@ -505,6 +505,11 @@ void SemanticAnalyser::visit(Binop &binop)
 
 void SemanticAnalyser::visit(Compoundop &compop)
 {
+  // FIXME don't do this unconditionally and do it more safely
+  // note that it *must* come before accepting the compop.var below so that it doesn't fail on an undefined variable
+  std::string var_ident = compop.var->ident;
+  variable_val_.insert({var_ident, SizedType(Type::integer, 8)});
+
   compop.var->accept(*this);
   Type &type = compop.var->type.type;
 
