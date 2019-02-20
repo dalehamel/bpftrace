@@ -811,26 +811,33 @@ void CodegenLLVM::visit(Binop &binop)
 
 void CodegenLLVM::visit(Compoundop &compop)
 {
+  Variable &var = *compop.var;
 
-  SizedType &type = compop.expr->type;
-  if (type.type == Type::integer)
+  if (variables_.find(var.ident) == variables_.end())
   {
-    Value *expr;
-    expr = expr_;
-    compop.expr->accept(*this); // stores the address of the thing we are trying to increment
+    AllocaInst *val = b_.CreateAllocaBPFInit(var.type, var.ident);
+    variables_[var.ident] = val;
+    // FIXME initialize to 0?
+  }
 
+  if (var.type.type == Type::integer)
+  {
+
+    Value *value;
+    expr_ = b_.CreateLoad(variables_[var.ident]);
+    value = expr_;
     // promote int to 64-bit
-    expr = b_.CreateIntCast(expr, b_.getInt64Ty(), false);
+    value = b_.CreateIntCast(value, b_.getInt64Ty(), false);
 
     switch (compop.op) {
       case bpftrace::Parser::token::PLUSPLUS:
       {
-        expr_ = b_.CreateAdd    (expr, b_.getInt64(1));
+        expr_ = b_.CreateAdd    (value, b_.getInt64(1));
         break;
       }
       case bpftrace::Parser::token::MINUSMINUS:
       {
-        expr_ = b_.CreateSub    (expr, b_.getInt64(1));
+        expr_ = b_.CreateSub    (value, b_.getInt64(1));
         break;
       }
       default:
@@ -839,7 +846,7 @@ void CodegenLLVM::visit(Compoundop &compop)
     }
     // Figure out the IR to store the value back at the address where we found it, check other examples for how to do this
     // also see how this is done for assignments
-//    b_.CreateStore(expr, expr_);
+    b_.CreateStore(expr_, variables_[var.ident]);
   }
   else
   {

@@ -88,7 +88,7 @@ void Printer::visit(Compoundop &compop)
   out_ << indent << opstr(compop) << std::endl;
 
   ++depth_;
-  compop.expr->accept(*this);
+  compop.var->accept(*this);
   --depth_;
 }
 

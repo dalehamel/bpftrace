@@ -505,13 +505,13 @@ void SemanticAnalyser::visit(Binop &binop)
 
 void SemanticAnalyser::visit(Compoundop &compop)
 {
-  compop.expr->accept(*this);
-  Type &type = compop.expr->type.type;
+  compop.var->accept(*this);
+  Type &type = compop.var->type.type;
 
   if (is_final_pass()) {
     if (type != Type::integer)
     {
-      err_ << "The " << opstr(compop) << " operator can not be used on expressions of type " << type << std::endl;
+      err_ << "The " << opstr(compop) << " operator can not be used on variables of type " << type << std::endl;
     }
   }
 

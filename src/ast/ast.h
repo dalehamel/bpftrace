@@ -103,8 +103,8 @@ public:
 
 class Compoundop : public Expression {
 public:
-  Compoundop(Expression *expr, int op) : expr(expr), op(op) { }
-  Expression *expr;
+  Compoundop(Variable *var, int op) : var(var), op(op) { }
+  Variable *var;
   int op;
 
   void accept(Visitor &v) override;

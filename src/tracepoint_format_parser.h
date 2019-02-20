@@ -40,7 +40,7 @@ public:
     binop.right->accept(*this);
   };
   void visit(Compoundop &compop) override {
-    compop.expr->accept(*this);
+    compop.var->accept(*this);
   };
   void visit(Unop &unop) override {
     unop.expr->accept(*this);
