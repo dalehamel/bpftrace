@@ -82,6 +82,16 @@ void Printer::visit(Binop &binop)
   --depth_;
 }
 
+void Printer::visit(Compoundop &compop)
+{
+  std::string indent(depth_, ' ');
+  out_ << indent << opstr(compop) << std::endl;
+
+  ++depth_;
+  compop.expr->accept(*this);
+  --depth_;
+}
+
 void Printer::visit(Unop &unop)
 {
   std::string indent(depth_, ' ');

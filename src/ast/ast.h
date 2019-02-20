@@ -101,6 +101,14 @@ public:
   void accept(Visitor &v) override;
 };
 
+class Compoundop : public Expression {
+public:
+  Compoundop(Expression *expr, int op) : expr(expr), op(op) { }
+  Expression *expr;
+  int op;
+
+  void accept(Visitor &v) override;
+};
 class Unop : public Expression {
 public:
   Unop(int op, Expression *expr) : expr(expr), op(op) { }
@@ -284,6 +292,7 @@ public:
   virtual void visit(Map &map) = 0;
   virtual void visit(Variable &var) = 0;
   virtual void visit(Binop &binop) = 0;
+  virtual void visit(Compoundop &compop) = 0;
   virtual void visit(Unop &unop) = 0;
   virtual void visit(Ternary &ternary) = 0;
   virtual void visit(FieldAccess &acc) = 0;
@@ -300,6 +309,7 @@ public:
 };
 
 std::string opstr(Binop &binop);
+std::string opstr(Compoundop &binop);
 std::string opstr(Unop &unop);
 
 } // namespace ast

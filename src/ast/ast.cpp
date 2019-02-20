@@ -37,6 +37,10 @@ void Binop::accept(Visitor &v) {
   v.visit(*this);
 }
 
+void Compoundop::accept(Visitor &v) {
+  v.visit(*this);
+}
+
 void Unop::accept(Visitor &v) {
   v.visit(*this);
 }
@@ -112,6 +116,17 @@ std::string opstr(Binop &binop)
     case bpftrace::Parser::token::BXOR:  return "^";
     default:
       std::cerr << "unknown binary operator" << std::endl;
+      abort();
+  }
+}
+
+std::string opstr(Compoundop &compop)
+{
+  switch (compop.op) {
+    case bpftrace::Parser::token::PLUSPLUS: return "++";
+    case bpftrace::Parser::token::MINUSMINUS: return "--";
+    default:
+      std::cerr << "unknown compound operator" << std::endl;
       abort();
   }
 }
