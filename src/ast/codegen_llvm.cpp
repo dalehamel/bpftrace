@@ -811,41 +811,42 @@ void CodegenLLVM::visit(Binop &binop)
 
 void CodegenLLVM::visit(Compoundop &compop)
 {
-//
-//  SizedType &type = compop.expr->type;
-//  if (type.type == Type::integer)
-//  {
-//    Value *expr;
-//    expr = expr_;
-//    compop.expr->accept(*this); // stores the address of the thing we are trying to increment
-//
-//    // promote int to 64-bit
-//    expr = b_.CreateIntCast(expr, b_.getInt64Ty(), false);
-//
-////    switch (compop.op) {
-////      case bpftrace::Parser::token::PLUSPLUS:
-////      {
-////        expr_ = b_.CreateAdd    (expr, b_.getInt64(1));
-////        break;
-////      }
-////      case bpftrace::Parser::token::MINUSMINUS:
-////      {
-////        expr_ = b_.CreateSub    (expr, b_.getInt64(1));
-////      }
-////      default:
-////        std::cerr << "missing codegen to compound expression for " << opstr(compop) << std::endl;
-////        abort();
-////    }
-//    // Figure out the IR to store the value back at the address where we found it, check other examples for how to do this
-//    // also see how this is done for assignments
+
+  SizedType &type = compop.expr->type;
+  if (type.type == Type::integer)
+  {
+    Value *expr;
+    expr = expr_;
+    compop.expr->accept(*this); // stores the address of the thing we are trying to increment
+
+    // promote int to 64-bit
+    expr = b_.CreateIntCast(expr, b_.getInt64Ty(), false);
+
+    switch (compop.op) {
+      case bpftrace::Parser::token::PLUSPLUS:
+      {
+        expr_ = b_.CreateAdd    (expr, b_.getInt64(1));
+        break;
+      }
+      case bpftrace::Parser::token::MINUSMINUS:
+      {
+        expr_ = b_.CreateSub    (expr, b_.getInt64(1));
+        break;
+      }
+      default:
+        std::cerr << "missing codegen to compound expression for " << opstr(compop) << std::endl;
+        abort();
+    }
+    // Figure out the IR to store the value back at the address where we found it, check other examples for how to do this
+    // also see how this is done for assignments
 //    b_.CreateStore(expr, expr_);
-//  }
-//  else
-//  {
-//    std::cerr << "missing codegen to compound operator \"" << opstr(compop) << "\" for this type" << std::endl;
-//    abort();
-//  }
-//  expr_ = b_.CreateIntCast(expr_, b_.getInt64Ty(), false);
+  }
+  else
+  {
+    std::cerr << "missing codegen to compound operator \"" << opstr(compop) << "\" for this type" << std::endl;
+    abort();
+  }
+  expr_ = b_.CreateIntCast(expr_, b_.getInt64Ty(), false);
 }
 
 void CodegenLLVM::visit(Unop &unop)

@@ -505,16 +505,17 @@ void SemanticAnalyser::visit(Binop &binop)
 
 void SemanticAnalyser::visit(Compoundop &compop)
 {
-//  compop.expr->accept(*this);
-//  Type &type = compop.expr->type.type;
-//
-//  if (is_final_pass()) {
-//    if (type != Type::integer)
-//      err_ << "The " << opstr(compop) << " operator can not be used on expressions of type " << type << std::endl;
-//    }
-//  }
-//
-//  compop.type = SizedType(Type::integer, 8);
+  compop.expr->accept(*this);
+  Type &type = compop.expr->type.type;
+
+  if (is_final_pass()) {
+    if (type != Type::integer)
+    {
+      err_ << "The " << opstr(compop) << " operator can not be used on expressions of type " << type << std::endl;
+    }
+  }
+
+  compop.type = SizedType(Type::integer, 8);
 }
 
 void SemanticAnalyser::visit(Unop &unop)
