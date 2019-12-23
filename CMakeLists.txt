@@ -7,6 +7,7 @@ set(bpftrace_VERSION_MINOR 9)
 set(bpftrace_VERSION_PATCH 3)
 
 set(STATIC_LINKING OFF CACHE BOOL "Build bpftrace as a statically linked executable")
+set(EMBED_CLANG OFF CACHE BOOL "Embed LLVM and clang libraries, as a semi-static executable")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 set (CMAKE_CXX_STANDARD 14)
@@ -36,6 +37,49 @@ if (STATIC_LINKING)
   set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
   set(CMAKE_LINK_SEARCH_START_STATIC TRUE)
   set(CMAKE_LINK_SEARCH_END_STATIC TRUE)
+endif()
+
+if (EMBED_CLANG)
+  set(LLVM_VERSION 8.0.1)
+  set(LLVM_CONFIGURE_FLAGS   "-Wno-dev "
+                             "-DCMAKE_BUILD_TYPE=MinSizeRel "
+                             "-DCMAKE_C_FLAGS_MINSIZEREL_INIT=\"$CFLAGS\" "
+                             "-DCMAKE_CXX_FLAGS_MINSIZEREL_INIT=\"$CXXFLAGS\" "
+                             "-DCMAKE_EXE_LINKER_FLAGS_MINSIZEREL_INIT=\"$LDFLAGS\" "
+                             "-DCMAKE_INSTALL_PREFIX=/$_prefix "
+                             #"-DFFI_INCLUDE_DIR="$ffi_include_dir" "
+                             "-DLLVM_BINUTILS_INCDIR=/usr/include "
+                             "-DLLVM_BUILD_DOCS=OFF "
+                             "-DLLVM_BUILD_EXAMPLES=OFF "
+                             "-DLLVM_BUILD_EXTERNAL_COMPILER_RT=ON "
+                             "-DLLVM_BUILD_LLVM_DYLIB=ON "
+                             "-DLLVM_BUILD_TESTS=ON "
+                             "-DLLVM_DEFAULT_TARGET_TRIPLE=\"$CBUILD\" "
+                             "-DLLVM_ENABLE_ASSERTIONS=OFF "
+                             "-DLLVM_ENABLE_CXX1Y=ON "
+                             #"-DLLVM_ENABLE_FFI=ON "
+                             "-DLLVM_ENABLE_LIBCXX=OFF "
+                             "-DLLVM_ENABLE_PIC=ON "
+                             "-DLLVM_ENABLE_RTTI=ON "
+                             "-DLLVM_ENABLE_SPHINX=OFF "
+                             "-DLLVM_ENABLE_TERMINFO=ON "
+                             "-DLLVM_ENABLE_ZLIB=ON "
+                             "-DLLVM_HOST_TRIPLE=\"$CHOST\" "
+                             "-DLLVM_INCLUDE_EXAMPLES=OFF "
+                             "-DLLVM_LINK_LLVM_DYLIB=ON "
+                             "-DLLVM_APPEND_VC_REV=OFF "
+                             "../llvm")
+
+  include(ExternalProject)
+  ExternalProject_Add(llvm
+    URL https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/llvm-${LLVM_VERSION}.src.tar.xz
+    CONFIGURE_COMMAND PATH=$ENV{PATH} cmake  ${LLVM_CONFIGURE_FLAGS}
+    #BUILD_COMMAND ${LLVM_BUILD_COMMAND}
+    UPDATE_DISCONNECTED 1
+    )
+
+# FIXME clang next
+# https://github.com/llvm/llvm-project/releases/download/llvmorg-${PV}/${MY_P}.tar.xz
 endif()
 
 set(FIND_LIBRARY_USE_LIB64_PATHS TRUE)
