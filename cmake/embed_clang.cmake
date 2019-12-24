@@ -101,7 +101,7 @@ set(LLVM_CONFIGURE_FLAGS   "-Wno-dev "
 set(LLVM_TARGET_LIBS "")
 foreach(llvm_target IN LISTS LLVM_BUILD_TARGETS)
   list(APPEND LLVM_TARGET_LIBS "<INSTALL_DIR>/lib/${llvm_target}")
-endforeach(LLVM_BUILD_TARGETS)
+endforeach(llvm_target)
 
 ExternalProject_Add(embedded_llvm
   URL https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/llvm-${LLVM_VERSION}.src.tar.xz
@@ -112,6 +112,16 @@ ExternalProject_Add(embedded_llvm
 
 ExternalProject_Get_Property(embedded_llvm INSTALL_DIR)
 set(EMBEDDED_LLVM_INSTALL_DIR ${INSTALL_DIR})
+
+foreach(llvm_target IN LISTS LLVM_BUILD_TARGETS)
+  string(REPLACE ".a" "" llvm_target_noext ${llvm_target})
+  string(TOUPPER ${llvm_target_noext} llvm_target_upper)
+  string(STRIP ${llvm_target_upper} llvm_target_name)
+
+  add_library(${llvm_target_name} STATIC IMPORTED GLOBAL)
+  set_property(TARGET ${llvm_target_name} PROPERTY IMPORTED_LOCATION ${EMBEDDED_LLVM_INSTALL_DIR}/lib/${llvm_target})
+  add_dependencies(${llvm_target_name} embedded_llvm)
+endforeach(llvm_target)
 
 set(CLANG_BUILD_TARGETS "libclang.a "
                         "libclangAnalysis.a "
@@ -148,7 +158,7 @@ set(CLANG_BUILD_TARGETS "libclang.a "
 set(CLANG_TARGET_LIBS "")
 foreach(clang_target IN LISTS CLANG_BUILD_TARGETS)
   list(APPEND CLANG_TARGET_LIBS "<INSTALL_DIR>/lib/${clang_target}")
-endforeach(CLANG_BUILD_TARGETS)
+endforeach(clang_target)
 
 set(CLANG_CONFIGURE_FLAGS  "-Wno-dev "
                            "-DCMAKE_PREFIX_PATH=${EMBEDDED_LLVM_INSTALL_DIR}/lib/cmake/llvm "
@@ -166,9 +176,6 @@ set(CLANG_CONFIGURE_FLAGS  "-Wno-dev "
                            "-DLLVM_ENABLE_RTTI=ON "
                            "<SOURCE_DIR>")
 
-message("LLVM LIBS: ${LLVM_TARGET_LIBS}")
-message("CLANG LIBS: ${CLANG_TARGET_LIBS}")
-
 ExternalProject_Add(embedded_clang
   URL https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/cfe-${LLVM_VERSION}.src.tar.xz
   CONFIGURE_COMMAND PATH=$ENV{PATH} cmake  ${CLANG_CONFIGURE_FLAGS}
@@ -178,13 +185,17 @@ ExternalProject_Add(embedded_clang
   UPDATE_DISCONNECTED 1
 )
 
+ExternalProject_Get_Property(embedded_clang INSTALL_DIR)
+set(EMBEDDED_CLANG_INSTALL_DIR ${INSTALL_DIR})
+
 ExternalProject_Add_StepDependencies(embedded_clang install embedded_llvm)
 
+foreach(clang_target IN LISTS CLANG_BUILD_TARGETS)
+  string(REPLACE ".a" "" clang_target_noext ${clang_target})
+  string(TOUPPER ${clang_target_noext} clang_target_upper)
+  string(STRIP ${clang_target_upper} clang_target_name)
 
-# FIXME loop over dependencies
-#add_library(SDL2_LIBRARY STATIC IMPORTED GLOBAL)
-#set_property(TARGET SDL2_LIBRARY PROPERTY IMPORTED_LOCATION ${SDL2_INSTALL_DIR}/lib/libSDL2.a)
-#add_dependencies(SDL2_LIBRARY SDL2_PROJECT)
-# FIXME clang next
-# https://github.com/llvm/llvm-project/releases/download/llvmorg-${PV}/${MY_P}.tar.xz
-
+  add_library(${clang_target_name} STATIC IMPORTED GLOBAL)
+  set_property(TARGET ${clang_target_name} PROPERTY IMPORTED_LOCATION ${EMBEDDED_CLANG_INSTALL_DIR}/lib/${clang_target})
+  add_dependencies(${clang_target_name} embedded_clang)
+endforeach(clang_target)

@@ -47,10 +47,6 @@ if (STATIC_LINKING)
   set(CMAKE_LINK_SEARCH_END_STATIC TRUE)
 endif()
 
-if (EMBED_DEPENDENCIES)
-  include(embed_clang)
-endif()
-
 set(FIND_LIBRARY_USE_LIB64_PATHS TRUE)
 
 find_package(LibBcc REQUIRED) # FIXME make this static if EMBED_DEPENDENCIES
@@ -93,20 +89,6 @@ check_type_size("BPF_FUNC_get_current_cgroup_id" GET_CURRENT_CGROUP_ID LANGUAGE 
 check_type_size("BPF_FUNC_send_signal" SEND_SIGNAL LANGUAGE C)
 set(CMAKE_EXTRA_INCLUDE_FILES)
 
-# FIXME skip this if EMBED_DEPENDENCIES
-# Some users have multiple versions of llvm installed and would like to specify
-# a specific llvm version.
-if(${LLVM_REQUESTED_VERSION})
-  find_package(LLVM ${LLVM_REQUESTED_VERSION} REQUIRED)
-else()
-  find_package(LLVM REQUIRED)
-endif()
-
-if(${LLVM_VERSION_MAJOR} VERSION_LESS 5)
-  message(SEND_ERROR "Unsupported LLVM version found: ${LLVM_INCLUDE_DIRS}")
-  message(SEND_ERROR "Specify an LLVM major version using LLVM_REQUESTED_VERSION=<major version>")
-endif()
-
 find_package(LibBpf)
 find_package(LibBfd)
 find_package(LibOpcodes)
@@ -118,12 +100,43 @@ endif()
 include(CheckIncludeFile)
 check_include_file("sys/sdt.h" HAVE_SYSTEMTAP_SYS_SDT_H)
 
-# FIXME if embedded, use the paths above instead
-include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
-add_definitions(${LLVM_DEFINITIONS})
+if (EMBED_DEPENDENCIES)
+  include(embed_clang)
+  set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+  set(CMAKE_LINK_SEARCH_START_STATIC TRUE)
+  set(CMAKE_LINK_SEARCH_END_STATIC TRUE)
 
-find_package(Clang REQUIRED)
-include_directories(SYSTEM ${CLANG_INCLUDE_DIRS})
+#  set(CMAKE_MODULE_PATH ${EMBEDDED_LLVM_INSTALL_DIR}/lib/cmake/llvm ${CMAKE_MODULE_PATH})
+#  set(CMAKE_MODULE_PATH ${EMBEDDED_CLANG_INSTALL_DIR}/lib/cmake/clang ${CMAKE_MODULE_PATH})
+
+  #find_package(LLVM REQUIRED)
+  #include_directories(SYSTEM ${LLVM_INCLUDE_DIRS}) # FIXME?
+  #add_definitions(${LLVM_DEFINITIONS})
+
+  #find_package(Clang REQUIRED)
+  #include_directories(SYSTEM ${CLANG_INCLUDE_DIRS}) # FIXME?
+#else()
+endif()
+  # Some users have multiple versions of llvm installed and would like to specify
+  # a specific llvm version.
+  if(${LLVM_REQUESTED_VERSION})
+    find_package(LLVM ${LLVM_REQUESTED_VERSION} REQUIRED)
+  else()
+    find_package(LLVM REQUIRED)
+  endif()
+
+  if(${LLVM_VERSION_MAJOR} VERSION_LESS 5)
+    message(SEND_ERROR "Unsupported LLVM version found: ${LLVM_INCLUDE_DIRS}")
+    message(SEND_ERROR "Specify an LLVM major version using LLVM_REQUESTED_VERSION=<major version>")
+  endif()
+
+  # FIXME if embedded, use the paths above instead
+  include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
+  add_definitions(${LLVM_DEFINITIONS})
+
+  find_package(Clang REQUIRED)
+  include_directories(SYSTEM ${CLANG_INCLUDE_DIRS})
 
 add_subdirectory(src/arch)
 add_subdirectory(src/ast)
