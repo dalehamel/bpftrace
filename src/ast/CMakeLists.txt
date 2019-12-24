@@ -22,7 +22,7 @@ target_link_libraries(ast arch)
 
 add_dependencies(ast parser)
 
-if (STATIC_LINKING)
+if (STATIC_LINKING OR EMBED_DEPENDENCIES)
   set(clang_libs
       libclang.a
       clangAST
