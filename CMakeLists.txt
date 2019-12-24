@@ -7,7 +7,15 @@ set(bpftrace_VERSION_MINOR 9)
 set(bpftrace_VERSION_PATCH 3)
 
 set(STATIC_LINKING OFF CACHE BOOL "Build bpftrace as a statically linked executable")
-set(EMBED_CLANG OFF CACHE BOOL "Embed LLVM and clang libraries, as a semi-static executable")
+set(EMBED_DEPENDENCIES OFF CACHE BOOL "Embed all required libraries except libc, resulting in a semi-static executable")
+
+if ( STATIC_LINKING AND EMBED_DEPENDENCIES )
+  set(CONFIG_ERROR "Cannot build both a static and semi-static executable. "
+                   "Enable STATIC_LINKING to embed everything, even libc. "
+                   "Enable EMBED_DEPENDENCIES to embed all except libc. ")
+  message(FATAL_ERROR ${CONFIG_ERROR})
+endif()
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 set (CMAKE_CXX_STANDARD 14)
@@ -39,55 +47,16 @@ if (STATIC_LINKING)
   set(CMAKE_LINK_SEARCH_END_STATIC TRUE)
 endif()
 
-if (EMBED_CLANG)
-  set(LLVM_VERSION 8.0.1)
-  set(LLVM_CONFIGURE_FLAGS   "-Wno-dev "
-                             "-DCMAKE_BUILD_TYPE=MinSizeRel "
-                             "-DCMAKE_C_FLAGS_MINSIZEREL_INIT=\"$CFLAGS\" "
-                             "-DCMAKE_CXX_FLAGS_MINSIZEREL_INIT=\"$CXXFLAGS\" "
-                             "-DCMAKE_EXE_LINKER_FLAGS_MINSIZEREL_INIT=\"$LDFLAGS\" "
-                             "-DCMAKE_INSTALL_PREFIX=/$_prefix "
-                             #"-DFFI_INCLUDE_DIR="$ffi_include_dir" "
-                             "-DLLVM_BINUTILS_INCDIR=/usr/include "
-                             "-DLLVM_BUILD_DOCS=OFF "
-                             "-DLLVM_BUILD_EXAMPLES=OFF "
-                             "-DLLVM_BUILD_EXTERNAL_COMPILER_RT=ON "
-                             "-DLLVM_BUILD_LLVM_DYLIB=ON "
-                             "-DLLVM_BUILD_TESTS=ON "
-                             "-DLLVM_DEFAULT_TARGET_TRIPLE=\"$CBUILD\" "
-                             "-DLLVM_ENABLE_ASSERTIONS=OFF "
-                             "-DLLVM_ENABLE_CXX1Y=ON "
-                             #"-DLLVM_ENABLE_FFI=ON "
-                             "-DLLVM_ENABLE_LIBCXX=OFF "
-                             "-DLLVM_ENABLE_PIC=ON "
-                             "-DLLVM_ENABLE_RTTI=ON "
-                             "-DLLVM_ENABLE_SPHINX=OFF "
-                             "-DLLVM_ENABLE_TERMINFO=ON "
-                             "-DLLVM_ENABLE_ZLIB=ON "
-                             "-DLLVM_HOST_TRIPLE=\"$CHOST\" "
-                             "-DLLVM_INCLUDE_EXAMPLES=OFF "
-                             "-DLLVM_LINK_LLVM_DYLIB=ON "
-                             "-DLLVM_APPEND_VC_REV=OFF "
-                             "../llvm")
-
-  include(ExternalProject)
-  ExternalProject_Add(llvm
-    URL https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/llvm-${LLVM_VERSION}.src.tar.xz
-    CONFIGURE_COMMAND PATH=$ENV{PATH} cmake  ${LLVM_CONFIGURE_FLAGS}
-    #BUILD_COMMAND ${LLVM_BUILD_COMMAND}
-    UPDATE_DISCONNECTED 1
-    )
-
-# FIXME clang next
-# https://github.com/llvm/llvm-project/releases/download/llvmorg-${PV}/${MY_P}.tar.xz
+if (EMBED_DEPENDENCIES)
+  include(embed_clang)
 endif()
 
 set(FIND_LIBRARY_USE_LIB64_PATHS TRUE)
 
-find_package(LibBcc REQUIRED)
+find_package(LibBcc REQUIRED) # FIXME make this static if EMBED_DEPENDENCIES
 include_directories(SYSTEM ${LIBBCC_INCLUDE_DIRS})
 
-find_package(LibElf REQUIRED)
+find_package(LibElf REQUIRED )# FIXME make this static if EMBED_DEPENDENCIES
 include_directories(SYSTEM ${LIBELF_INCLUDE_DIRS})
 
 find_package(BISON REQUIRED)
@@ -124,6 +93,7 @@ check_type_size("BPF_FUNC_get_current_cgroup_id" GET_CURRENT_CGROUP_ID LANGUAGE 
 check_type_size("BPF_FUNC_send_signal" SEND_SIGNAL LANGUAGE C)
 set(CMAKE_EXTRA_INCLUDE_FILES)
 
+# FIXME skip this if EMBED_DEPENDENCIES
 # Some users have multiple versions of llvm installed and would like to specify
 # a specific llvm version.
 if(${LLVM_REQUESTED_VERSION})
@@ -148,6 +118,7 @@ endif()
 include(CheckIncludeFile)
 check_include_file("sys/sdt.h" HAVE_SYSTEMTAP_SYS_SDT_H)
 
+# FIXME if embedded, use the paths above instead
 include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
