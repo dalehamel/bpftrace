@@ -41,26 +41,30 @@ RUN git reset --hard $bcc_ref && mkdir build && cd build && \
 # FIXME
 # Dynamically linking to libs:
 #   -Wl,-Bdynamic -lbfd -lopcodes
-# - -Wl,-Bdynamic /usr/local/lib/libbcc.so
 # - -Wl,-Bdynamic -lelf
 
 # - -lclang # probably added by clang target
 # -  - libLLVM-8.so, probabyl added by llvm target?
 
 # Build bpftrace with all dependencies embedded
+RUN echo "BUILDING bpftrace"
+
 RUN mkdir -p /src && git clone https://github.com/dalehamel/bpftrace /src/bpftrace
 WORKDIR /src/bpftrace
 RUN git reset --hard $bpftrace_ref && mkdir build && cd build && \
-    cmake -DCMAKE_BUILD_TYPE="Release" -DEMBED_DEPENDENCIES=ON \
-          -DBUILD_TESTING=OFF ../ && \
-    glibc_statics="-Wl,-Bstatic -lz -lrt -ldl -lpthread" && \
-    glibc_dynamic="-lpthread -ldl -Wl,-Bstatic -lz -lrt" && \
-    sed -i 's|-Wl,-Bdynamic /usr/lib/.*/libLLVM-8.so\S\+||g' \
-      src/CMakeFiles/bpftrace.dir/link.txt && \
-    sed -i "s|${glibc_statics}|${glibc_dynamic}|g" \
-      src/CMakeFiles/bpftrace.dir/link.txt && \
-    sed -i "s|-lclang||g" \
-      src/CMakeFiles/bpftrace.dir/link.txt && \
-    make -j$(nproc) || true # FIXME build fails regularly but we still want to cache
+    cmake -DCMAKE_BUILD_TYPE="Release" -DEMBED_LIBC=OFF -DEMBED_LLVM=ON -DEMBED_CLANG=ON\
+          -DSTATIC_LINKING=ON -DBUILD_TESTING=OFF ../ && \
+
+WORKDIR /src/bpftrace/build
+RUN make embedded_llvm
+RUN make embedded_llvm
+RUN make -j$(nproc)
                             # FIXME eliminate need to post-process linker file with proper use of cmake
                             #&& make install # FIXME make test bin work
+
+#    sed -i 's|-Wl,-Bdynamic /usr/lib/.*/libLLVM-8.so\S\+||g' \
+#      src/CMakeFiles/bpftrace.dir/link.txt && \
+#RUN  glibc_statics="-Wl,-Bstatic -lz -lrt -ldl -ltinfo -lpthread" && \
+#    glibc_dynamic="-lpthread -ldl -Wl,-Bstatic -lz -lrt -ltinfo" && \
+#    sed -i "s|${glibc_statics}|${glibc_dynamic}|g" \
+

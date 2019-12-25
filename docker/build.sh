@@ -15,6 +15,9 @@ cmake -DCMAKE_BUILD_TYPE="$2" -DSTATIC_LINKING:BOOL=$STATIC_LINKING \
       -DEMBED_LLVM:BOOL=$EMBED_LLVM -DEMBED_CLANG:BOOL=$EMBED_CLANG \
       -DEMBED_LIBC:BOOL=$EMBED_LIBC ../
 shift 2
+
+[[ $EMBED_LLVM  = "ON" ]] && make embedded_llvm
+[[ $EMBED_CLANG = "ON" ]] && make embedded_clang
 make "$@"
 
 if [ $RUN_TESTS = 1 ]; then
