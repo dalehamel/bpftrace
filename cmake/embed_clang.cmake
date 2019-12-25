@@ -9,67 +9,67 @@ set(LLVM_TARGET_ARCH "x86_64")
 set(LLVM_VERSION "8.0.1")
 
 # TO DO convert this to a list of libraries and compute
-set(LLVM_BUILD_TARGETS "libLLVMAggressiveInstCombine.a "
-                       "libLLVMAnalysis.a "
-                       "libLLVMAsmParser.a "
-                       "libLLVMAsmPrinter.a "
-                       "libLLVMBinaryFormat.a "
-                       "libLLVMBitReader.a "
-                       "libLLVMBitWriter.a "
-                       "libLLVMBPFAsmParser.a "
-                       "libLLVMBPFAsmPrinter.a "
-                       "libLLVMBPFCodeGen.a "
-                       "libLLVMBPFDesc.a "
-                       "libLLVMBPFDisassembler.a "
-                       "libLLVMBPFInfo.a "
-                       "libLLVMCodeGen.a "
-                       "libLLVMCore.a "
-                       "libLLVMCoroutines.a "
-                       "libLLVMCoverage.a "
-                       "libLLVMDebugInfoCodeView.a "
-                       "libLLVMDebugInfoDWARF.a "
-                       "libLLVMDebugInfoMSF.a "
-                       "libLLVMDebugInfoPDB.a "
-                       "libLLVMDemangle.a "
-                       "libLLVMDlltoolDriver.a "
-                       "libLLVMExecutionEngine.a "
-                       "libLLVMFuzzMutate.a "
-                       "libLLVMGlobalISel.a "
-                       "libLLVMInstCombine.a "
-                       "libLLVMInstrumentation.a "
-                       "libLLVMInterpreter.a "
-                       "libLLVMipo.a "
-                       "libLLVMIRReader.a "
-                       "libLLVMLibDriver.a "
-                       "libLLVMLineEditor.a "
-                       "libLLVMLinker.a "
-                       "libLLVMLTO.a "
-                       "libLLVMMC.a "
-                       "libLLVMMCA.a "
-                       "libLLVMMCDisassembler.a "
-                       "libLLVMMCJIT.a "
-                       "libLLVMMCParser.a "
-                       "libLLVMMIRParser.a "
-                       "libLLVMObjCARCOpts.a "
-                       "libLLVMObject.a "
-                       "libLLVMObjectYAML.a "
-                       "libLLVMOption.a "
-                       "libLLVMOptRemarks.a "
-                       "libLLVMOrcJIT.a "
-                       "libLLVMPasses.a "
-                       "libLLVMProfileData.a "
-                       "libLLVMRuntimeDyld.a "
-                       "libLLVMScalarOpts.a "
-                       "libLLVMSelectionDAG.a "
-                       "libLLVMSupport.a "
-                       "libLLVMSymbolize.a "
-                       "libLLVMTableGen.a "
-                       "libLLVMTarget.a "
-                       "libLLVMTextAPI.a "
-                       "libLLVMTransformUtils.a "
-                       "libLLVMVectorize.a "
-                       "libLLVMWindowsManifest.a "
-                       "libLLVMXRay.a ")
+set(LLVM_BUILD_TARGETS libLLVMAggressiveInstCombine.a
+                       libLLVMAnalysis.a
+                       libLLVMAsmParser.a
+                       libLLVMAsmPrinter.a
+                       libLLVMBinaryFormat.a
+                       libLLVMBitReader.a
+                       libLLVMBitWriter.a
+                       libLLVMBPFAsmParser.a
+                       libLLVMBPFAsmPrinter.a
+                       libLLVMBPFCodeGen.a
+                       libLLVMBPFDesc.a
+                       libLLVMBPFDisassembler.a
+                       libLLVMBPFInfo.a
+                       libLLVMCodeGen.a
+                       libLLVMCore.a
+                       libLLVMCoroutines.a
+                       libLLVMCoverage.a
+                       libLLVMDebugInfoCodeView.a
+                       libLLVMDebugInfoDWARF.a
+                       libLLVMDebugInfoMSF.a
+                       libLLVMDebugInfoPDB.a
+                       libLLVMDemangle.a
+                       libLLVMDlltoolDriver.a
+                       libLLVMExecutionEngine.a
+                       libLLVMFuzzMutate.a
+                       libLLVMGlobalISel.a
+                       libLLVMInstCombine.a
+                       libLLVMInstrumentation.a
+                       libLLVMInterpreter.a
+                       libLLVMipo.a
+                       libLLVMIRReader.a
+                       libLLVMLibDriver.a
+                       libLLVMLineEditor.a
+                       libLLVMLinker.a
+                       libLLVMLTO.a
+                       libLLVMMC.a
+                       libLLVMMCA.a
+                       libLLVMMCDisassembler.a
+                       libLLVMMCJIT.a
+                       libLLVMMCParser.a
+                       libLLVMMIRParser.a
+                       libLLVMObjCARCOpts.a
+                       libLLVMObject.a
+                       libLLVMObjectYAML.a
+                       libLLVMOption.a
+                       libLLVMOptRemarks.a
+                       libLLVMOrcJIT.a
+                       libLLVMPasses.a
+                       libLLVMProfileData.a
+                       libLLVMRuntimeDyld.a
+                       libLLVMScalarOpts.a
+                       libLLVMSelectionDAG.a
+                       libLLVMSupport.a
+                       libLLVMSymbolize.a
+                       libLLVMTableGen.a
+                       libLLVMTarget.a
+                       libLLVMTextAPI.a
+                       libLLVMTransformUtils.a
+                       libLLVMVectorize.a
+                       libLLVMWindowsManifest.a
+                       libLLVMXRay.a)
 
 set(LLVM_CONFIGURE_FLAGS   "-Wno-dev "
                            "-DLLVM_TARGETS_TO_BUILD=BPF "
@@ -112,48 +112,53 @@ ExternalProject_Add(embedded_llvm
 
 ExternalProject_Get_Property(embedded_llvm INSTALL_DIR)
 set(EMBEDDED_LLVM_INSTALL_DIR ${INSTALL_DIR})
+set(LLVM_EMBEDDED_CMAKE_TARGETS "")
 
 foreach(llvm_target IN LISTS LLVM_BUILD_TARGETS)
   string(REPLACE ".a" "" llvm_target_noext ${llvm_target})
   string(TOUPPER ${llvm_target_noext} llvm_target_upper)
   string(STRIP ${llvm_target_upper} llvm_target_name)
 
+  list(APPEND LLVM_EMBEDDED_CMAKE_TARGETS ${llvm_target_name})
   add_library(${llvm_target_name} STATIC IMPORTED GLOBAL)
   set_property(TARGET ${llvm_target_name} PROPERTY IMPORTED_LOCATION ${EMBEDDED_LLVM_INSTALL_DIR}/lib/${llvm_target})
   add_dependencies(${llvm_target_name} embedded_llvm)
 endforeach(llvm_target)
 
-set(CLANG_BUILD_TARGETS "libclang.a "
-                        "libclangAnalysis.a "
-                        "libclangARCMigrate.a "
-                        "libclangAST.a "
-                        "libclangASTMatchers.a "
-                        "libclangBasic.a "
-                        "libclangCodeGen.a "
-                        "libclangCrossTU.a "
-                        "libclangDriver.a "
-                        "libclangDynamicASTMatchers.a "
-                        "libclangEdit.a "
-                        "libclangFormat.a "
-                        "libclangFrontend.a "
-                        "libclangFrontendTool.a "
-                        "libclangHandleCXX.a "
-                        "libclangHandleLLVM.a "
-                        "libclangIndex.a "
-                        "libclangLex.a "
-                        "libclangParse.a "
-                        "libclangRewrite.a "
-                        "libclangRewriteFrontend.a "
-                        "libclangSema.a "
-                        "libclangSerialization.a "
-                        "libclangStaticAnalyzerCheckers.a "
-                        "libclangStaticAnalyzerCore.a "
-                        "libclangStaticAnalyzerFrontend.a "
-                        "libclangTooling.a "
-                        "libclangToolingASTDiff.a "
-                        "libclangToolingCore.a "
-                        "libclangToolingInclusions.a "
-                        "libclangToolingRefactor.a ")
+# FIXME  Split these in to separate files, allow using system LLVM
+# if EMBED_LLVM isn't set to true
+# Must verify versions match
+set(CLANG_BUILD_TARGETS libclang.a
+                        libclangAnalysis.a
+                        libclangARCMigrate.a
+                        libclangAST.a
+                        libclangASTMatchers.a
+                        libclangBasic.a
+                        libclangCodeGen.a
+                        libclangCrossTU.a
+                        libclangDriver.a
+                        libclangDynamicASTMatchers.a
+                        libclangEdit.a
+                        libclangFormat.a
+                        libclangFrontend.a
+                        libclangFrontendTool.a
+                        libclangHandleCXX.a
+                        libclangHandleLLVM.a
+                        libclangIndex.a
+                        libclangLex.a
+                        libclangParse.a
+                        libclangRewrite.a
+                        libclangRewriteFrontend.a
+                        libclangSema.a
+                        libclangSerialization.a
+                        libclangStaticAnalyzerCheckers.a
+                        libclangStaticAnalyzerCore.a
+                        libclangStaticAnalyzerFrontend.a
+                        libclangTooling.a
+                        libclangToolingASTDiff.a
+                        libclangToolingCore.a
+                        libclangToolingInclusions.a
+                        libclangToolingRefactor.a)
 
 set(CLANG_TARGET_LIBS "")
 foreach(clang_target IN LISTS CLANG_BUILD_TARGETS)
@@ -187,6 +192,7 @@ ExternalProject_Add(embedded_clang
 
 ExternalProject_Get_Property(embedded_clang INSTALL_DIR)
 set(EMBEDDED_CLANG_INSTALL_DIR ${INSTALL_DIR})
+set(CLANG_EMBEDDED_CMAKE_TARGETS "")
 
 ExternalProject_Add_StepDependencies(embedded_clang install embedded_llvm)
 
@@ -195,6 +201,7 @@ foreach(clang_target IN LISTS CLANG_BUILD_TARGETS)
   string(TOUPPER ${clang_target_noext} clang_target_upper)
   string(STRIP ${clang_target_upper} clang_target_name)
 
+  list(APPEND CLANG_EMBEDDED_CMAKE_TARGETS ${clang_target_name})
   add_library(${clang_target_name} STATIC IMPORTED GLOBAL)
   set_property(TARGET ${clang_target_name} PROPERTY IMPORTED_LOCATION ${EMBEDDED_CLANG_INSTALL_DIR}/lib/${clang_target})
   add_dependencies(${clang_target_name} embedded_clang)
