@@ -37,6 +37,16 @@ RUN git reset --hard $bcc_ref && mkdir build && cd build && \
     cp src/cc/libbcc-loader-static.a /usr/local/lib/libbcc-loader-static.a && \
     cp ./src/cc/libbcc_bpf.a /usr/local/lib/libbpf.a
 
+# FIXME make bcc builder separate and just copy necessary bcc files
+RUN apt-get remove -y --purge \
+      clang-${LLVM_VERSION} \
+      libclang-${LLVM_VERSION}-dev \
+      libclang-common-${LLVM_VERSION}-dev \
+      libclang1-${LLVM_VERSION} \
+      llvm-${LLVM_VERSION} \
+      llvm-${LLVM_VERSION}-dev \
+      llvm-${LLVM_VERSION}-runtime \
+      libllvm${LLVM_VERSION}
 
 # FIXME
 # Dynamically linking to libs:
@@ -47,13 +57,12 @@ RUN git reset --hard $bcc_ref && mkdir build && cd build && \
 # -  - libLLVM-8.so, probabyl added by llvm target?
 
 # Build bpftrace with all dependencies embedded
-RUN echo "BUILDING bpftrace"
 
-RUN mkdir -p /src && git clone https://github.com/dalehamel/bpftrace /src/bpftrace
-WORKDIR /src/bpftrace
-RUN git reset --hard $bpftrace_ref && mkdir build && cd build && \
-    cmake -DCMAKE_BUILD_TYPE="Release" -DEMBED_LIBC=OFF -DEMBED_LLVM=ON -DEMBED_CLANG=ON\
-          -DSTATIC_LINKING=ON -DBUILD_TESTING=OFF ../ && \
+RUN mkdir -p /src && git clone https://github.com/dalehamel/bpftrace /src/bpftrace && \
+    cd /src/bpftrace && git reset --hard $bpftrace_ref && \
+    mkdir build && cd build && \
+    cmake -DCMAKE_BUILD_TYPE="Release" -DSTATIC_LINKING=ON -DEMBED_LIBC=OFF \
+          -DEMBED_LLVM=ON -DEMBED_CLANG=ON -DBUILD_TESTING=OFF ../
 
 WORKDIR /src/bpftrace/build
 RUN make embedded_llvm

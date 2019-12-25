@@ -1,17 +1,6 @@
 if(EMBED_LLVM)
   include(ExternalProject)
 
-  # NOTE - even with embedded LLVM, bpftrace's own cmake build process
-  # references LLVM cmake helper functions, so LLVM cmake files (eg, llvm-dev)
-  # are still a build-time dependency even if embedding LLVM, as the external
-  # project cannot be used for this, it is not available at configure time.
-  set(CMAKE_MODULE_PATH  ${CMAKE_MODULE_PATH} /usr/lib/llvm-8/lib/cmake/llvm/) # FIXME ubuntu path
-                                                                     # FIXME properly try to find this file
-  include(LLVMConfig) # needed in order to provide use of helper functions in src/ast
-  include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
-
-  # FIXME set the module path back to what it was after loading?
-
   # FIXME implement triple detection - hardcoded to amd64 for now
   # FIXME set cross compiler triple (CBUILD)via config flags
   # SEE https://github.com/google/libcxx/blob/master/cmake/Modules/GetTriple.cmake
@@ -129,6 +118,8 @@ if(EMBED_LLVM)
   ExternalProject_Get_Property(embedded_llvm INSTALL_DIR)
   set(EMBEDDED_LLVM_INSTALL_DIR ${INSTALL_DIR})
   set(LLVM_EMBEDDED_CMAKE_TARGETS "")
+
+  include_directories(SYSTEM ${EMBEDDED_LLVM_INSTALL_DIR}/include)
 
   foreach(llvm_target IN LISTS LLVM_BUILD_TARGETS)
     string(REPLACE ".a" "" llvm_target_noext ${llvm_target})
