@@ -9,7 +9,6 @@ if(EMBED_LLVM)
                                                                      # FIXME properly try to find this file
   include(LLVMConfig) # needed in order to provide use of helper functions in src/ast
   include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
-  add_definitions(${LLVM_DEFINITIONS})
 
   # FIXME set the module path back to what it was after loading?
 
@@ -90,7 +89,6 @@ if(EMBED_LLVM)
                              "-DLLVM_TARGETS_TO_BUILD=BPF "
                              "-DCMAKE_BUILD_TYPE=MinSizeRel "
                              "-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> "
-                             #"-DFFI_INCLUDE_DIR="$ffi_include_dir" "
                              "-DLLVM_BINUTILS_INCDIR=/usr/include "
                              "-DLLVM_BUILD_DOCS=OFF "
                              "-DLLVM_BUILD_EXAMPLES=OFF "
@@ -100,9 +98,12 @@ if(EMBED_LLVM)
                              "-DLLVM_DEFAULT_TARGET_TRIPLE=${CBUILD} "
                              "-DLLVM_ENABLE_ASSERTIONS=OFF "
                              "-DLLVM_ENABLE_CXX1Y=ON "
-                             #"-DLLVM_ENABLE_FFI=ON "
+                             "-DLLVM_ENABLE_FFI=OFF " # FIXME
+                             "-DLLVM_ENABLE_LIBEDIT=OFF "
                              "-DLLVM_ENABLE_LIBCXX=OFF "
                              "-DLLVM_ENABLE_PIC=ON "
+                             "-DLLVM_ENABLE_LIBPFM=OFF "
+                             "-DLLVM_ENABLE_EH=ON "
                              "-DLLVM_ENABLE_RTTI=ON "
                              "-DLLVM_ENABLE_SPHINX=OFF "
                              "-DLLVM_ENABLE_TERMINFO=OFF "

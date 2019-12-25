@@ -14,39 +14,24 @@ if(EMBED_CLANG)
   set(LLVM_TARGET_ARCH "x86_64")
   set(LLVM_VERSION "8.0.1")
 
-  # if EMBED_LLVM isn't set to true
+  # FIXME if EMBED_LLVM isn't set to true
   # Must verify versions match
+
   set(CLANG_BUILD_TARGETS libclang.a
-                          libclangAnalysis.a
-                          libclangARCMigrate.a
                           libclangAST.a
-                          libclangASTMatchers.a
+                          libclangAnalysis.a
                           libclangBasic.a
-                          libclangCodeGen.a
-                          libclangCrossTU.a
                           libclangDriver.a
-                          libclangDynamicASTMatchers.a
                           libclangEdit.a
                           libclangFormat.a
                           libclangFrontend.a
-                          libclangFrontendTool.a
-                          libclangHandleCXX.a
-                          libclangHandleLLVM.a
                           libclangIndex.a
                           libclangLex.a
                           libclangParse.a
                           libclangRewrite.a
-                          libclangRewriteFrontend.a
                           libclangSema.a
                           libclangSerialization.a
-                          libclangStaticAnalyzerCheckers.a
-                          libclangStaticAnalyzerCore.a
-                          libclangStaticAnalyzerFrontend.a
-                          libclangTooling.a
-                          libclangToolingASTDiff.a
-                          libclangToolingCore.a
-                          libclangToolingInclusions.a
-                          libclangToolingRefactor.a)
+                          libclangToolingCore.a)
 
   set(CLANG_TARGET_LIBS "")
   foreach(clang_target IN LISTS CLANG_BUILD_TARGETS)

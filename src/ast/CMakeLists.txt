@@ -23,25 +23,35 @@ target_link_libraries(ast arch)
 add_dependencies(ast parser)
 
 if (STATIC_LINKING)
-  set(clang_libs
-      clang
-      clangAST
-      clangAnalysis
-      clangBasic
-      clangDriver
-      clangEdit
-      clangFormat
-      clangFrontend
-      clangIndex
-      clangLex
-      clangParse
-      clangRewrite
-      clangSema
-      clangSerialization
-      clangToolingCore)
-  llvm_map_components_to_libnames(llvm_libs bpfcodegen ipo irreader mcjit orcjit ${LLVM_TARGETS_TO_BUILD})
-  target_link_libraries(ast ${clang_libs})
-  target_link_libraries(ast ${llvm_libs})
+
+  if(EMBED_CLANG)
+    target_link_libraries(ast ${CLANG_EMBEDDED_CMAKE_TARGETS})
+  else()
+    set(clang_libs
+        libclang.a
+        clangAST
+        clangAnalysis
+        clangBasic
+        clangDriver
+        clangEdit
+        clangFormat
+        clangFrontend
+        clangIndex
+        clangLex
+        clangParse
+        clangRewrite
+        clangSema
+        clangSerialization
+        clangToolingCore)
+  endif()
+
+  if(EMBED_LLVM)
+    target_link_libraries(ast ${LLVM_EMBEDDED_CMAKE_TARGETS})
+  else()
+    llvm_map_components_to_libnames(llvm_libs bpfcodegen ipo irreader mcjit orcjit ${LLVM_TARGETS_TO_BUILD})
+    target_link_libraries(ast ${clang_libs})
+    target_link_libraries(ast ${llvm_libs})
+  endif()
 else()
   find_library(found_LLVM LLVM HINTS ${LLVM_LIBRARY_DIRS})
   if(found_LLVM)
