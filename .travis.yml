@@ -42,6 +42,12 @@ matrix:
     - name: "LLVM 8 Release"
       env: LLVM_VERSION=8 BASE=bionic TYPE=Release RUN_ALL_TESTS=1 RUNTIME_TEST_DISABLE=builtin.cgroup
     # FIXME add embedded builds with caching?
+
+    - name: "Semi-Static LLVM 8 Debug"
+      env: LLVM_VERSION=8 BASE=bionic-static STATIC_LINKING=ON STATIC_LIBC=OFF EMBED_CLANG=on TYPE=Debug RUN_ALL_TESTS=1 RUNTIME_TEST_DISABLE=builtin.cgroup
+    - name: "Semi-static LLVM 8 Release"
+      env: LLVM_VERSION=8 BASE=bionic-static STATIC_LINKING=ON STATIC_LIBC=OFF EMBED_CLANG=on TYPE=Release RUN_ALL_TESTS=1 RUNTIME_TEST_DISABLE=builtin.cgroup
+
 install:
   - sudo apt-get install linux-headers-$(uname -r)
   - docker build --build-arg LLVM_VERSION=$LLVM_VERSION -t bpftrace-builder-$BASE-llvm-$LLVM_VERSION -f docker/Dockerfile.$BASE docker/

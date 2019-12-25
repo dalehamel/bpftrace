@@ -1,14 +1,15 @@
 if(EMBED_LLVM)
-
   include(ExternalProject)
 
   # NOTE - even with embedded LLVM, bpftrace's own cmake build process
   # references LLVM cmake helper functions, so LLVM cmake files (eg, llvm-dev)
   # are still a build-time dependency even if embedding LLVM, as the external
   # project cannot be used for this, it is not available at configure time.
-  set(CMAKE_MODULE_PATH  ${CMAKE_MODULE_PATH} /usr/lib/llvm-8/cmake) # FIXME ubuntu path
+  set(CMAKE_MODULE_PATH  ${CMAKE_MODULE_PATH} /usr/lib/llvm-8/lib/cmake/llvm/) # FIXME ubuntu path
                                                                      # FIXME properly try to find this file
   include(LLVMConfig) # needed in order to provide use of helper functions in src/ast
+  include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
+  add_definitions(${LLVM_DEFINITIONS})
 
   # FIXME set the module path back to what it was after loading?
 
@@ -84,6 +85,7 @@ if(EMBED_LLVM)
                          libLLVMWindowsManifest.a
                          libLLVMXRay.a)
 
+  # See https://llvm.org/docs/CMake.html#llvm-specific-variables
   set(LLVM_CONFIGURE_FLAGS   "-Wno-dev "
                              "-DLLVM_TARGETS_TO_BUILD=BPF "
                              "-DCMAKE_BUILD_TYPE=MinSizeRel "
@@ -93,7 +95,7 @@ if(EMBED_LLVM)
                              "-DLLVM_BUILD_DOCS=OFF "
                              "-DLLVM_BUILD_EXAMPLES=OFF "
                              "-DLLVM_BUILD_EXTERNAL_COMPILER_RT=ON "
-                             #"-DLLVM_BUILD_LLVM_DYLIB=ON "
+                             "-DLLVM_BUILD_LLVM_DYLIB=ON "
                              "-DLLVM_BUILD_TESTS=OFF "
                              "-DLLVM_DEFAULT_TARGET_TRIPLE=${CBUILD} "
                              "-DLLVM_ENABLE_ASSERTIONS=OFF "
@@ -107,7 +109,7 @@ if(EMBED_LLVM)
                              "-DLLVM_ENABLE_ZLIB=ON "
                              "-DLLVM_HOST_TRIPLE=${CHOST} "
                              "-DLLVM_INCLUDE_EXAMPLES=OFF "
-                             #"-DLLVM_LINK_LLVM_DYLIB=ON "
+                             "-DLLVM_LINK_LLVM_DYLIB=ON "
                              "-DLLVM_APPEND_VC_REV=OFF "
                              "<SOURCE_DIR>")
 
@@ -137,5 +139,4 @@ if(EMBED_LLVM)
     set_property(TARGET ${llvm_target_name} PROPERTY IMPORTED_LOCATION ${EMBEDDED_LLVM_INSTALL_DIR}/lib/${llvm_target})
     add_dependencies(${llvm_target_name} embedded_llvm)
   endforeach(llvm_target)
-
 endif()
