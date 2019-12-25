@@ -114,9 +114,8 @@ endif()
 include(CheckIncludeFile)
 check_include_file("sys/sdt.h" HAVE_SYSTEMTAP_SYS_SDT_H)
 
-if (EMBED_DEPENDENCIES)
+if (EMBED_LLVM)
   include(embed_llvm)
-  include(embed_clang)
 else()
   # Some users have multiple versions of llvm installed and would like to specify
   # a specific llvm version.
@@ -134,7 +133,11 @@ else()
   # FIXME if embedded, use the paths above instead
   include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
   add_definitions(${LLVM_DEFINITIONS})
+endif()
 
+if(EMBED_CLANG)
+  include(embed_clang)
+else()
   find_package(Clang REQUIRED)
   include_directories(SYSTEM ${CLANG_INCLUDE_DIRS})
 endif()

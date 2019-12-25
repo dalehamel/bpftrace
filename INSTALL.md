@@ -234,7 +234,7 @@ cmake -DCMAKE_BUILD_TYPE=Release ../
 make
 ```
 
-By default bpftrace will be built as a dynamically linked executable. If a statically linked executable would be preferred and your system has the required libraries installed, the CMake option `-DSTATIC_LINKING:BOOL=ON` can be used. Building bpftrace using the Docker method below will always result in a statically linked executable. A debug build of bpftrace can be set up with `cmake -DCMAKE_BUILD_TYPE=Debug ../`.
+By default bpftrace will be built as a dynamically linked executable. If a statically linked executable would be preferred and your system has the required libraries installed, the CMake option `-DSTATIC_LINKING:BOOL=ON` can be used. Building bpftrace using the Docker method below will always result in a statically linked executable. To make an semi-static executable that includes everything except libc, the CMake option "EMBED_LIBC:BOOL=OFF" can be added. To build the necessary static LLVM or Clang libraries, `-DEMBED_LLVM:BOOL=ON` and `-DEMBED_CLANG=ON` can be used respectively, the latter being especially useful as many distributions do not include `libclang.a`. A debug build of bpftrace can be set up with `cmake -DCMAKE_BUILD_TYPE=Debug ../`.
 
 The latest version of Google Test will be downloaded on each build. To speed up builds and only download its source on the first run, use the CMake option `-DOFFLINE_BUILDS:BOOL=ON`.
 
