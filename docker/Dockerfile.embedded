@@ -14,6 +14,8 @@ RUN apt-get update && apt-get install -y \
       git \
       libelf-dev \
       zlib1g-dev \
+      libiberty-dev \
+      libbfd-dev \
       clang-${LLVM_VERSION} \
       libclang-${LLVM_VERSION}-dev \
       libclang-common-${LLVM_VERSION}-dev \
@@ -30,15 +32,15 @@ RUN mkdir -p /src && git clone https://github.com/iovisor/bcc /src/bcc
 WORKDIR /src/bcc
 RUN git reset --hard $bcc_ref && mkdir build && cd build && \
     cmake -DCMAKE_INSTALL_PREFIX=/usr/local ../ && make -j$(nproc) && \
-    make install &&  mkdir -p /usr/local/lib64 && \
-    cp src/cc/libbcc.a /usr/local/lib64/libbcc.a && \
-    cp src/cc/libbcc-loader-static.a /usr/local/lib64/libbcc-loader-static.a && \
-    cp ./src/cc/libbcc_bpf.a /usr/local/lib64/libbpf.a
+    make install &&  mkdir -p /usr/local/lib && \
+    cp src/cc/libbcc.a /usr/local/lib/libbcc.a && \
+    cp src/cc/libbcc-loader-static.a /usr/local/lib/libbcc-loader-static.a && \
+    cp ./src/cc/libbcc_bpf.a /usr/local/lib/libbpf.a
 
 # Build bpftrace with all dependencies embedded
 RUN mkdir -p /src && git clone https://github.com/dalehamel/bpftrace /src/bpftrace
 WORKDIR /src/bpftrace
 RUN git reset --hard $bpftrace_ref && mkdir build && cd build && \
-    cmake -DCMAKE_BUILD_TYPE="Release" -DEMBED_DEPENDENTIES:BOOL=ON \
+    cmake -DCMAKE_BUILD_TYPE="Release" -DEMBED_DEPENDENCIES=ON \
           -DBUILD_TESTING=OFF ../ && \
     make -j$(nproc) && make install # FIXME make test bin work

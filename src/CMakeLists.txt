@@ -75,6 +75,11 @@ else()
 endif()
 target_link_libraries(bpftrace ${LIBELF_LIBRARIES})
 
+if(EMBED_DEPENDENCIES)
+  target_link_libraries(bpftrace ${LLVM_EMBEDDED_CMAKE_TARGETS})
+  target_link_libraries(bpftrace ${CLANG_EMBEDDED_CMAKE_TARGETS})
+endif()
+
 install(TARGETS bpftrace DESTINATION bin)
 
 set(KERNEL_HEADERS_DIR "" CACHE PATH "Hard-code kernel headers directory")
