@@ -7,13 +7,23 @@ set(bpftrace_VERSION_MINOR 9)
 set(bpftrace_VERSION_PATCH 3)
 
 set(STATIC_LINKING OFF CACHE BOOL "Build bpftrace as a statically linked executable")
-set(EMBED_DEPENDENCIES OFF CACHE BOOL "Embed all required libraries except libc, resulting in a semi-static executable")
+set(EMBED_DEPENDENCIES OFF CACHE BOOL "Fetch supported external library dependencies as EternalProjects and embed them statically.")
+set(EMBED_GLIBC OFF CACHE BOOL "Attempt to embed libc, only known to work with musl. Has issues with dlopen.")
+set(EMBED_LLVM OFF CACHE BOOL "Build LLVM static libs as an ExternalProject and link to these instead of system libs.")
+set(EMBED_CLANG OFF CACHE BOOL "Build Clang static libs as an ExternalProject and link to these instead of system libs.")
 
-if ( STATIC_LINKING AND EMBED_DEPENDENCIES )
-  set(CONFIG_ERROR "Cannot build both a static and semi-static executable. "
-                   "Enable STATIC_LINKING to embed everything, even libc. "
-                   "Enable EMBED_DEPENDENCIES to embed all except libc. ")
-  message(FATAL_ERROR ${CONFIG_ERROR})
+if(EMBED_LLVM OR EMBED_CLANG)
+  set(EMBED_DEPENDENCIES ON)
+endif()
+
+if (EMBED_DEPENDENCIES)
+  if (NOT STATIC_LINKING)
+    set(CONFIG_ERROR "Dependencies can only be embedded for a static build."
+                     "Enable EMBED_DEPENDENCIES to embed all except libc. ")
+    message(FATAL_ERROR ${CONFIG_ERROR})
+  elseif(EMBED_LIBC)
+    message(WARNING "Embedding libc is known to cause problems, proceed at your own risk") #iovisor/bpftrace/issues/266
+  endif()
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -41,7 +51,11 @@ add_compile_options("-Wdisabled-optimization")
 include(CTest)
 
 if (STATIC_LINKING)
-  set(CMAKE_EXE_LINKER_FLAGS "-static")
+  if(EMBED_LIBC)
+    set(CMAKE_EXE_LINKER_FLAGS "-static")
+  elseif(EMBED_DEPENDENCIES)
+    set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
+  endif()
   set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
   set(CMAKE_LINK_SEARCH_START_STATIC TRUE)
   set(CMAKE_LINK_SEARCH_END_STATIC TRUE)
@@ -101,23 +115,9 @@ include(CheckIncludeFile)
 check_include_file("sys/sdt.h" HAVE_SYSTEMTAP_SYS_SDT_H)
 
 if (EMBED_DEPENDENCIES)
+  include(embed_llvm)
   include(embed_clang)
-  set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-  set(CMAKE_LINK_SEARCH_START_STATIC TRUE)
-  set(CMAKE_LINK_SEARCH_END_STATIC TRUE)
-
-#  set(CMAKE_MODULE_PATH ${EMBEDDED_LLVM_INSTALL_DIR}/lib/cmake/llvm ${CMAKE_MODULE_PATH})
-#  set(CMAKE_MODULE_PATH ${EMBEDDED_CLANG_INSTALL_DIR}/lib/cmake/clang ${CMAKE_MODULE_PATH})
-
-  #find_package(LLVM REQUIRED)
-  #include_directories(SYSTEM ${LLVM_INCLUDE_DIRS}) # FIXME?
-  #add_definitions(${LLVM_DEFINITIONS})
-
-  #find_package(Clang REQUIRED)
-  #include_directories(SYSTEM ${CLANG_INCLUDE_DIRS}) # FIXME?
-#else()
-endif()
+else()
   # Some users have multiple versions of llvm installed and would like to specify
   # a specific llvm version.
   if(${LLVM_REQUESTED_VERSION})
@@ -137,6 +137,7 @@ endif()
 
   find_package(Clang REQUIRED)
   include_directories(SYSTEM ${CLANG_INCLUDE_DIRS})
+endif()
 
 add_subdirectory(src/arch)
 add_subdirectory(src/ast)

@@ -55,9 +55,9 @@ if(HAVE_BFD_DISASM)
   endif(LIBBFD_DISASM_FOUR_ARGS_SIGNATURE)
   target_link_libraries(bpftrace ${LIBBFD_LIBRARIES})
   target_link_libraries(bpftrace ${LIBOPCODES_LIBRARIES})
-  if(STATIC_LINKING OR EMBED_DEPENDENCIES)
+  if(STATIC_LINKING)
     target_link_libraries(bpftrace ${LIBIBERTY_LIBRARIES})
-  endif(STATIC_LINKING OR EMBED_DEPENDENCIES)
+  endif(STATIC_LINKING)
 endif(HAVE_BFD_DISASM)
 
 if (ALLOW_UNSAFE_UPROBE)
@@ -66,7 +66,7 @@ endif(ALLOW_UNSAFE_UPROBE)
 
 target_link_libraries(bpftrace arch ast parser resources)
 
-if(STATIC_LINKING OR EMBED_DEPENDENCIES)
+if(STATIC_LINKING)
   target_link_libraries(bpftrace ${LIBBCC_LIBRARIES})
   target_link_libraries(bpftrace ${LIBBPF_LIBRARY_STATIC})
   target_link_libraries(bpftrace ${LIBBCC_LOADER_LIBRARY_STATIC})
@@ -75,8 +75,11 @@ else()
 endif()
 target_link_libraries(bpftrace ${LIBELF_LIBRARIES})
 
-if(EMBED_DEPENDENCIES)
+if(EMBED_LLVM)
   target_link_libraries(bpftrace ${LLVM_EMBEDDED_CMAKE_TARGETS})
+endif()
+
+if(EMBED_CLANG)
   target_link_libraries(bpftrace ${CLANG_EMBEDDED_CMAKE_TARGETS})
 endif()
 
