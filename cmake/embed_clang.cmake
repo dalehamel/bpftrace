@@ -1,14 +1,6 @@
 if(EMBED_CLANG)
   include(ExternalProject)
 
-  # NOTE - even with embedded Clang, bpftrace still depends on clang headers,
-  # which an External Project cannot provided. These are provided by
-  # references LLVM cmake helper functions, so LLVM cmake files (eg, llvm-dev)
-  set(CMAKE_MODULE_PATH  ${CMAKE_MODULE_PATH} /usr/lib/llvm-8/lib/cmake/clang/) # FIXME ubuntu path
-                                                                     # FIXME properly try to find this file
-  include(ClangConfig) # needed in order to provide use of helper functions in src/ast
-  include_directories(SYSTEM ${CLANG_INCLUDE_DIRS})
-
   set(CHOST "x86_64-generic-linux") # FIXME expose these properly
   set(CBUILD "x86_64-generic-linux")
   set(LLVM_TARGET_ARCH "x86_64")
