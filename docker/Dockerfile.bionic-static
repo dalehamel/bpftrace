@@ -1,6 +1,5 @@
-FROM ubuntu:bionic
+FROM ubuntu:bionic as bccbuilder
 
-ARG bpftrace_ref="master"
 ARG bcc_ref="v0.12.0"
 ARG LLVM_VERSION="8"
 ENV LLVM_VERSION=$LLVM_VERSION
@@ -32,32 +31,31 @@ RUN mkdir -p /src && git clone https://github.com/iovisor/bcc /src/bcc
 WORKDIR /src/bcc
 RUN git reset --hard $bcc_ref && mkdir build && cd build && \
     cmake -DCMAKE_INSTALL_PREFIX=/usr/local ../ && make -j$(nproc) && \
-    make install &&  mkdir -p /usr/local/lib && \
-    cp src/cc/libbcc.a /usr/local/lib/libbcc.a && \
-    cp src/cc/libbcc-loader-static.a /usr/local/lib/libbcc-loader-static.a && \
-    cp ./src/cc/libbcc_bpf.a /usr/local/lib/libbpf.a
+    make install
 
-# FIXME make bcc builder separate and just copy necessary bcc files
-RUN apt-get remove -y --purge \
-      clang-${LLVM_VERSION} \
-      libclang-${LLVM_VERSION}-dev \
-      libclang-common-${LLVM_VERSION}-dev \
-      libclang1-${LLVM_VERSION} \
-      llvm-${LLVM_VERSION} \
-      llvm-${LLVM_VERSION}-dev \
-      llvm-${LLVM_VERSION}-runtime \
-      libllvm${LLVM_VERSION}
+FROM ubuntu:bionic
 
-# FIXME
-# Dynamically linking to libs:
-#   -Wl,-Bdynamic -lbfd -lopcodes
-# - -Wl,-Bdynamic -lelf
+ARG bpftrace_ref="master"
 
-# - -lclang # probably added by clang target
-# -  - libLLVM-8.so, probabyl added by llvm target?
+COPY --from=bcc-builder /usr/local/include/bcc /usr/local/include/bcc
+COPY --from=bcc-builder /src/bcc/build/src/cc/libbcc.a /usr/local/lib/libbcc.a
+COPY --from=bcc-builder /src/bcc/build/src/cc/libbcc-loader-static.a /usr/local/lib/libbcc-loader-static.a
+COPY --from=bcc-builder /src/bcc/build/src/cc/libbcc_bpf.a /usr/local/lib/libbpf.a
 
-# Build bpftrace with all dependencies embedded
+RUN apt-get update && apt-get install -y \
+      bison \
+      binutils-dev \
+      cmake \
+      flex \
+      g++ \
+      git \
+      libelf-dev \
+      zlib1g-dev \
+      libiberty-dev \
+      libbfd-dev \
+      systemtap-sdt-dev
 
+# FIXME not necessary once patch is merged
 RUN mkdir -p /src && git clone https://github.com/dalehamel/bpftrace /src/bpftrace && \
     cd /src/bpftrace && git reset --hard $bpftrace_ref && \
     mkdir build && cd build && \
@@ -68,3 +66,5 @@ WORKDIR /src/bpftrace/build
 RUN make embedded_llvm  -j$(nproc)
 RUN make embedded_clang -j$(nproc)
 RUN make -j$(nproc) && make install
+
+# FIXME use convention for entrypoint
