@@ -85,8 +85,8 @@ if(STATIC_LINKING)
   target_link_libraries(bpftrace LIBELF)
 else()
   target_link_libraries(bpftrace ${LIBBCC_LIBRARIES})
-endif()
-target_link_libraries(bpftrace ${LIBELF_LIBRARIES})
+  target_link_libraries(bpftrace ${LIBELF_LIBRARIES})
+endif(STATIC_LINKING)
 
 install(TARGETS bpftrace DESTINATION bin)
 

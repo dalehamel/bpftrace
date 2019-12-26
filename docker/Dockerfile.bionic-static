@@ -62,18 +62,9 @@ RUN mkdir -p /src && git clone https://github.com/dalehamel/bpftrace /src/bpftra
     cd /src/bpftrace && git reset --hard $bpftrace_ref && \
     mkdir build && cd build && \
     cmake -DCMAKE_BUILD_TYPE="Release" -DSTATIC_LINKING=ON -DEMBED_LIBC=OFF \
-          -DEMBED_LLVM=ON -DEMBED_CLANG=ON -DBUILD_TESTING=OFF ../
+          -DEMBED_LLVM=ON -DEMBED_CLANG=ON ../
 
 WORKDIR /src/bpftrace/build
 RUN make embedded_llvm  -j$(nproc)
 RUN make embedded_clang -j$(nproc)
-RUN make -j$(nproc)
-                            # FIXME eliminate need to post-process linker file with proper use of cmake
-                            #&& make install # FIXME make test bin work
-
-#    sed -i 's|-Wl,-Bdynamic /usr/lib/.*/libLLVM-8.so\S\+||g' \
-#      src/CMakeFiles/bpftrace.dir/link.txt && \
-#RUN  glibc_statics="-Wl,-Bstatic -lz -lrt -ldl -ltinfo -lpthread" && \
-#    glibc_dynamic="-lpthread -ldl -Wl,-Bstatic -lz -lrt -ltinfo" && \
-#    sed -i "s|${glibc_statics}|${glibc_dynamic}|g" \
-
+RUN make -j$(nproc) && make install
