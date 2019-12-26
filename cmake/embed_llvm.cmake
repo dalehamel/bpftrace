@@ -131,9 +131,4 @@ if(EMBED_LLVM)
     set_property(TARGET ${llvm_target_name} PROPERTY IMPORTED_LOCATION ${EMBEDDED_LLVM_INSTALL_DIR}/lib/${llvm_target})
     add_dependencies(${llvm_target_name} embedded_llvm)
   endforeach(llvm_target)
-
-  set_target_properties(LLVMSupport PROPERTIES
-    INTERFACE_LINK_LIBRARIES "-Wl,-Bstatic -lz;-Wl,-Bdynamic -lrt;dl;-Wl,-Bdynamic -lpthread;m;${EMBEDDED_LLVM_INSTALL_DIR}/lib/libLLVMDemangle.a"
-  )
-
 endif()

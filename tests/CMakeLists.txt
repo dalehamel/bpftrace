@@ -147,7 +147,9 @@ target_include_directories(bpftrace_test PUBLIC ${source_dir}/googlemock/include
 target_link_libraries(bpftrace_test ${binary_dir}/googlemock/gtest/libgtest.a)
 target_link_libraries(bpftrace_test ${binary_dir}/googlemock/gtest/libgtest_main.a)
 target_link_libraries(bpftrace_test ${binary_dir}/googlemock/libgmock.a)
-target_link_libraries(bpftrace_test ${CMAKE_THREAD_LIBS_INIT})
+if(NOT STATIC_LINKING)
+  target_link_libraries(bpftrace_test ${CMAKE_THREAD_LIBS_INIT})
+endif(NOT STATIC_LINKING)
 
 add_test(NAME bpftrace_test COMMAND bpftrace_test)
 

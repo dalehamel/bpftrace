@@ -1,13 +1,13 @@
 if(EMBED_CLANG)
   include(ExternalProject)
 
-  set(CHOST "x86_64-generic-linux") # FIXME expose these properly
+  set(CHOST "x86_64-generic-linux") # FIXME expose these properly as flags, document
   set(CBUILD "x86_64-generic-linux")
   set(LLVM_TARGET_ARCH "x86_64")
   set(LLVM_VERSION "8.0.1")
 
   # FIXME if EMBED_LLVM isn't set to true
-  # Must verify versions match
+  # Must verify versions match, try and use system lib
 
   set(CLANG_BUILD_TARGETS libclang.a
                           libclangAST.a
@@ -76,7 +76,7 @@ if(EMBED_CLANG)
     string(STRIP ${clang_target_noext} clang_target_name)
 
     list(APPEND CLANG_EMBEDDED_CMAKE_TARGETS ${clang_target_name})
-    add_library(${clang_target_name} STATIC IMPORTED GLOBAL)
+    add_library(${clang_target_name} STATIC IMPORTED)
     set_property(TARGET ${clang_target_name} PROPERTY IMPORTED_LOCATION ${EMBEDDED_CLANG_INSTALL_DIR}/lib/${clang_target})
     add_dependencies(${clang_target_name} embedded_clang)
   endforeach(clang_target)

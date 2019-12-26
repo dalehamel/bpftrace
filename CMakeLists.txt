@@ -7,22 +7,17 @@ set(bpftrace_VERSION_MINOR 9)
 set(bpftrace_VERSION_PATCH 3)
 
 set(STATIC_LINKING OFF CACHE BOOL "Build bpftrace as a statically linked executable")
-set(EMBED_DEPENDENCIES OFF CACHE BOOL "Fetch supported external library dependencies as EternalProjects and embed them statically.")
-set(EMBED_GLIBC OFF CACHE BOOL "Attempt to embed libc, only known to work with musl. Has issues with dlopen.")
+set(STATIC_LIBC OFF CACHE BOOL "Attempt to embed libc, only known to work with musl. Has issues with dlopen.")
 set(EMBED_LLVM OFF CACHE BOOL "Build LLVM static libs as an ExternalProject and link to these instead of system libs.")
 set(EMBED_CLANG OFF CACHE BOOL "Build Clang static libs as an ExternalProject and link to these instead of system libs.")
 
 if(EMBED_LLVM OR EMBED_CLANG)
-  set(EMBED_DEPENDENCIES ON)
-endif()
-
-if (EMBED_DEPENDENCIES)
   if (NOT STATIC_LINKING)
-    set(CONFIG_ERROR "Dependencies can only be embedded for a static build."
-                     "Enable EMBED_DEPENDENCIES to embed all except libc. ")
+    set(CONFIG_ERROR "Dependencies can only be embedded for a static build.\n"
+                     "Enable STATIC_LINKING=ON to embed static libs.")
     message(FATAL_ERROR ${CONFIG_ERROR})
-  elseif(EMBED_LIBC)
-    message(WARNING "Embedding libc is known to cause problems, proceed at your own risk") #iovisor/bpftrace/issues/266
+  elseif(STATIC_LIBC)
+    message(WARNING "static libc is known to cause problems, consider STATIC_LIBC=OFF. Proceed at your own risk") #iovisor/bpftrace/issues/266
   endif()
 endif()
 
@@ -51,15 +46,19 @@ add_compile_options("-Wdisabled-optimization")
 include(CTest)
 
 if (STATIC_LINKING)
-  if(EMBED_LIBC)
+  if(STATIC_LIBC)
     set(CMAKE_EXE_LINKER_FLAGS "-static")
-  elseif(EMBED_DEPENDENCIES)
+  elseif(EMBED_LLVM OR EMBED_CLANG)
     set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -Wl,--start-group")
-  endif()
+    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Bdynamic -lrt")
+    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Bdynamic -lpthread")
+    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Bdynamic -ldl -lm")
+    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Bstatic -lz")
+  endif(STATIC_LIBC)
   set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
   set(CMAKE_LINK_SEARCH_START_STATIC TRUE)
   set(CMAKE_LINK_SEARCH_END_STATIC TRUE)
-endif()
+endif(STATIC_LINKING)
 
 set(FIND_LIBRARY_USE_LIB64_PATHS TRUE)
 
