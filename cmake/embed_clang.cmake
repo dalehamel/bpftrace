@@ -80,11 +80,4 @@ if(EMBED_CLANG)
     set_property(TARGET ${clang_target_name} PROPERTY IMPORTED_LOCATION ${EMBEDDED_CLANG_INSTALL_DIR}/lib/${clang_target})
     add_dependencies(${clang_target_name} embedded_clang)
   endforeach(clang_target)
-
-  if (EMBED_LLVM)
-    # This is necessary to be sure that the order doesn't matter
-    set_target_properties(clang PROPERTIES
-      INTERFACE_LINK_LIBRARIES "-Wl,--start-group"
-    )
-  endif()
 endif()

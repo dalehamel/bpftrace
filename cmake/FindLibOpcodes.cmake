@@ -23,7 +23,6 @@ find_path (LIBOPCODES_INCLUDE_DIRS
 find_library (LIBOPCODES_LIBRARIES
   NAMES
     opcodes
-    libopcodes.a
   PATHS
     /lib
     /usr/lib

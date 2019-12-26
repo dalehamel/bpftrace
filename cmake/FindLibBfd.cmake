@@ -24,7 +24,6 @@ find_path (LIBBFD_INCLUDE_DIRS
 find_library (LIBBFD_LIBRARIES
   NAMES
     bfd
-    libbfd.a
   PATHS
     /lib
     /usr/lib
