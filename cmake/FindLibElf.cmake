@@ -35,7 +35,6 @@ find_path (LIBELF_INCLUDE_DIRS
 find_library (LIBELF_LIBRARIES
   NAMES
     elf
-    libelf.a
   PATHS
     /usr/lib
     /usr/local/lib
