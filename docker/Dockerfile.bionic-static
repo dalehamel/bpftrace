@@ -65,8 +65,8 @@ RUN mkdir -p /src && git clone https://github.com/dalehamel/bpftrace /src/bpftra
           -DEMBED_LLVM=ON -DEMBED_CLANG=ON -DBUILD_TESTING=OFF ../
 
 WORKDIR /src/bpftrace/build
-RUN make embedded_llvm
-RUN make embedded_llvm
+RUN make embedded_llvm  -j$(nproc)
+RUN make embedded_clang -j$(nproc)
 RUN make -j$(nproc)
                             # FIXME eliminate need to post-process linker file with proper use of cmake
                             #&& make install # FIXME make test bin work

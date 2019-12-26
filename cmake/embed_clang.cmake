@@ -23,7 +23,9 @@ if(EMBED_CLANG)
                           libclangRewrite.a
                           libclangSema.a
                           libclangSerialization.a
-                          libclangToolingCore.a)
+                          libclangToolingCore.a
+                          libclangToolingInclusions.a
+                          )
 
   set(CLANG_TARGET_LIBS "")
   foreach(clang_target IN LISTS CLANG_BUILD_TARGETS)
@@ -69,13 +71,20 @@ if(EMBED_CLANG)
   include_directories(SYSTEM ${EMBEDDED_CLANG_INSTALL_DIR}/include)
 
   foreach(clang_target IN LISTS CLANG_BUILD_TARGETS)
-    string(REPLACE ".a" "" clang_target_noext ${clang_target})
-    string(TOUPPER ${clang_target_noext} clang_target_upper)
-    string(STRIP ${clang_target_upper} clang_target_name)
+    string(REPLACE "lib" "" clang_target_nolib ${clang_target})
+    string(REPLACE ".a" "" clang_target_noext ${clang_target_nolib})
+    string(STRIP ${clang_target_noext} clang_target_name)
 
     list(APPEND CLANG_EMBEDDED_CMAKE_TARGETS ${clang_target_name})
     add_library(${clang_target_name} STATIC IMPORTED GLOBAL)
     set_property(TARGET ${clang_target_name} PROPERTY IMPORTED_LOCATION ${EMBEDDED_CLANG_INSTALL_DIR}/lib/${clang_target})
     add_dependencies(${clang_target_name} embedded_clang)
   endforeach(clang_target)
+
+  if (EMBED_LLVM)
+    # This is necessary to be sure that the order doesn't matter
+    set_target_properties(clang PROPERTIES
+      INTERFACE_LINK_LIBRARIES "-Wl,--start-group"
+    )
+  endif()
 endif()

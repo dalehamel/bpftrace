@@ -10,7 +10,7 @@ if(EMBED_LLVM)
   set(CBUILD "x86_64-generic-linux")
   set(LLVM_TARGET_ARCH "x86_64")
   set(LLVM_VERSION "8.0.1")
-  # TO DO convert this to a list of libraries and compute
+
   set(LLVM_BUILD_TARGETS libLLVMAggressiveInstCombine.a
                          libLLVMAnalysis.a
                          libLLVMAsmParser.a
@@ -63,7 +63,6 @@ if(EMBED_LLVM)
                          libLLVMRuntimeDyld.a
                          libLLVMScalarOpts.a
                          libLLVMSelectionDAG.a
-                         libLLVMSupport.a
                          libLLVMSymbolize.a
                          libLLVMTableGen.a
                          libLLVMTarget.a
@@ -71,7 +70,8 @@ if(EMBED_LLVM)
                          libLLVMTransformUtils.a
                          libLLVMVectorize.a
                          libLLVMWindowsManifest.a
-                         libLLVMXRay.a)
+                         libLLVMXRay.a
+                         libLLVMSupport.a)
 
   # See https://llvm.org/docs/CMake.html#llvm-specific-variables
   set(LLVM_CONFIGURE_FLAGS   "-Wno-dev "
@@ -122,13 +122,18 @@ if(EMBED_LLVM)
   include_directories(SYSTEM ${EMBEDDED_LLVM_INSTALL_DIR}/include)
 
   foreach(llvm_target IN LISTS LLVM_BUILD_TARGETS)
-    string(REPLACE ".a" "" llvm_target_noext ${llvm_target})
-    string(TOUPPER ${llvm_target_noext} llvm_target_upper)
-    string(STRIP ${llvm_target_upper} llvm_target_name)
+    string(REPLACE "lib" "" llvm_target_nolib ${llvm_target})
+    string(REPLACE ".a" "" llvm_target_noext ${llvm_target_nolib})
+    string(STRIP ${llvm_target_noext} llvm_target_name)
 
     list(APPEND LLVM_EMBEDDED_CMAKE_TARGETS ${llvm_target_name})
-    add_library(${llvm_target_name} STATIC IMPORTED GLOBAL)
+    add_library(${llvm_target_name} STATIC IMPORTED)
     set_property(TARGET ${llvm_target_name} PROPERTY IMPORTED_LOCATION ${EMBEDDED_LLVM_INSTALL_DIR}/lib/${llvm_target})
     add_dependencies(${llvm_target_name} embedded_llvm)
   endforeach(llvm_target)
+
+  set_target_properties(LLVMSupport PROPERTIES
+    INTERFACE_LINK_LIBRARIES "-Wl,-Bstatic -lz;-Wl,-Bdynamic -lrt;dl;-Wl,-Bdynamic -lpthread;m;${EMBEDDED_LLVM_INSTALL_DIR}/lib/libLLVMDemangle.a"
+  )
+
 endif()
