@@ -4,6 +4,15 @@ ARG bcc_ref="v0.12.0"
 ARG LLVM_VERSION="8"
 ENV LLVM_VERSION=$LLVM_VERSION
 
+RUN apt-get update && apt-get install -y curl gnupg &&\
+    llvmRepository="\n\
+deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main\n\
+deb-src http://apt.llvm.org/bionic/ llvm-toolchain-bionic main\n\
+deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-${LLVM_VERSION} main\n\
+deb-src http://apt.llvm.org/bionic/ llvm-toolchain-bionic-${LLVM_VERSION} main\n" &&\
+    echo $llvmRepository >> /etc/apt/sources.list && \
+    curl -L https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
+
 RUN apt-get update && apt-get install -y \
       bison \
       binutils-dev \
@@ -36,15 +45,15 @@ RUN git reset --hard $bcc_ref && mkdir build && cd build && \
     cp src/cc/libbcc-loader-static.a /usr/local/lib/libbcc-loader-static.a && \
     cp ./src/cc/libbcc_bpf.a /usr/local/lib/libbpf.a
 
-RUN apt-get remove -y --purge \
-      clang-${LLVM_VERSION} \
-      libclang-${LLVM_VERSION}-dev \
-      libclang-common-${LLVM_VERSION}-dev \
-      libclang1-${LLVM_VERSION} \
-      llvm-${LLVM_VERSION} \
-      llvm-${LLVM_VERSION}-dev \
-      llvm-${LLVM_VERSION}-runtime \
-      libllvm${LLVM_VERSION}
+#RUN apt-get remove -y --purge \
+#      clang-${LLVM_VERSION} \
+#      libclang-${LLVM_VERSION}-dev \
+#      libclang-common-${LLVM_VERSION}-dev \
+#      libclang1-${LLVM_VERSION} \
+#      llvm-${LLVM_VERSION} \
+#      llvm-${LLVM_VERSION}-dev \
+#      llvm-${LLVM_VERSION}-runtime \
+#      libllvm${LLVM_VERSION}
 #COPY --from=bccbuilder /usr/local/include/bcc /usr/local/include/bcc
 #COPY --from=bccbuilder /src/bcc/src/cc/libbpf/src/bpf.h /usr/local/include/bpf/bpf.h
 #COPY --from=bccbuilder /src/bcc/src/cc/libbpf/src/btf.h /usr/local/include/bpf/btf.h
