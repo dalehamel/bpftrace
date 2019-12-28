@@ -11,67 +11,67 @@ if(EMBED_LLVM)
   set(LLVM_TARGET_ARCH "x86_64")
   set(LLVM_VERSION "8.0.1")
 
-  set(LLVM_BUILD_TARGETS libLLVMAggressiveInstCombine.a
-                         libLLVMAnalysis.a
-                         libLLVMAsmParser.a
-                         libLLVMAsmPrinter.a
-                         libLLVMBinaryFormat.a
-                         libLLVMBitReader.a
-                         libLLVMBitWriter.a
-                         libLLVMBPFAsmParser.a
-                         libLLVMBPFAsmPrinter.a
-                         libLLVMBPFCodeGen.a
-                         libLLVMBPFDesc.a
-                         libLLVMBPFDisassembler.a
-                         libLLVMBPFInfo.a
-                         libLLVMCodeGen.a
-                         libLLVMCore.a
-                         libLLVMCoroutines.a
-                         libLLVMCoverage.a
-                         libLLVMDebugInfoCodeView.a
-                         libLLVMDebugInfoDWARF.a
-                         libLLVMDebugInfoMSF.a
-                         libLLVMDebugInfoPDB.a
-                         libLLVMDemangle.a
-                         libLLVMDlltoolDriver.a
-                         libLLVMExecutionEngine.a
-                         libLLVMFuzzMutate.a
-                         libLLVMGlobalISel.a
-                         libLLVMInstCombine.a
-                         libLLVMInstrumentation.a
-                         libLLVMInterpreter.a
-                         libLLVMipo.a
-                         libLLVMIRReader.a
-                         libLLVMLibDriver.a
-                         libLLVMLineEditor.a
-                         libLLVMLinker.a
-                         libLLVMLTO.a
-                         libLLVMMC.a
-                         libLLVMMCA.a
-                         libLLVMMCDisassembler.a
-                         libLLVMMCJIT.a
-                         libLLVMMCParser.a
-                         libLLVMMIRParser.a
-                         libLLVMObjCARCOpts.a
-                         libLLVMObject.a
-                         libLLVMObjectYAML.a
-                         libLLVMOption.a
-                         libLLVMOptRemarks.a
-                         libLLVMOrcJIT.a
-                         libLLVMPasses.a
-                         libLLVMProfileData.a
-                         libLLVMRuntimeDyld.a
-                         libLLVMScalarOpts.a
-                         libLLVMSelectionDAG.a
-                         libLLVMSymbolize.a
-                         libLLVMTableGen.a
-                         libLLVMTarget.a
-                         libLLVMTextAPI.a
-                         libLLVMTransformUtils.a
-                         libLLVMVectorize.a
-                         libLLVMWindowsManifest.a
-                         libLLVMXRay.a
-                         libLLVMSupport.a)
+  set(LLVM_BUILD_TARGETS LLVMAggressiveInstCombine
+                         LLVMAnalysis
+                         LLVMAsmParser
+                         LLVMAsmPrinter
+                         LLVMBinaryFormat
+                         LLVMBitReader
+                         LLVMBitWriter
+                         LLVMBPFAsmParser
+                         LLVMBPFAsmPrinter
+                         LLVMBPFCodeGen
+                         LLVMBPFDesc
+                         LLVMBPFDisassembler
+                         LLVMBPFInfo
+                         LLVMCodeGen
+                         LLVMCore
+                         LLVMCoroutines
+                         LLVMCoverage
+                         LLVMDebugInfoCodeView
+                         LLVMDebugInfoDWARF
+                         LLVMDebugInfoMSF
+                         LLVMDebugInfoPDB
+                         LLVMDemangle
+                         LLVMDlltoolDriver
+                         LLVMExecutionEngine
+                         LLVMFuzzMutate
+                         LLVMGlobalISel
+                         LLVMInstCombine
+                         LLVMInstrumentation
+                         LLVMInterpreter
+                         LLVMipo
+                         LLVMIRReader
+                         LLVMLibDriver
+                         LLVMLineEditor
+                         LLVMLinker
+                         LLVMLTO
+                         LLVMMC
+                         LLVMMCA
+                         LLVMMCDisassembler
+                         LLVMMCJIT
+                         LLVMMCParser
+                         LLVMMIRParser
+                         LLVMObjCARCOpts
+                         LLVMObject
+                         LLVMObjectYAML
+                         LLVMOption
+                         LLVMOptRemarks
+                         LLVMOrcJIT
+                         LLVMPasses
+                         LLVMProfileData
+                         LLVMRuntimeDyld
+                         LLVMScalarOpts
+                         LLVMSelectionDAG
+                         LLVMSymbolize
+                         LLVMTableGen
+                         LLVMTarget
+                         LLVMTextAPI
+                         LLVMTransformUtils
+                         LLVMVectorize
+                         LLVMWindowsManifest
+                         LLVMXRay
+                         LLVMSupport)
 
   # See https://llvm.org/docs/CMake.html#llvm-specific-variables
   set(LLVM_CONFIGURE_FLAGS   "-Wno-dev "
@@ -105,7 +105,7 @@ if(EMBED_LLVM)
 
   set(LLVM_TARGET_LIBS "")
   foreach(llvm_target IN LISTS LLVM_BUILD_TARGETS)
-    list(APPEND LLVM_TARGET_LIBS "<INSTALL_DIR>/lib/${llvm_target}")
+    list(APPEND LLVM_TARGET_LIBS "<INSTALL_DIR>/lib/lib${llvm_target}.a")
   endforeach(llvm_target)
 
   ExternalProject_Add(embedded_llvm
@@ -113,6 +113,7 @@ if(EMBED_LLVM)
     CONFIGURE_COMMAND PATH=$ENV{PATH} cmake  ${LLVM_CONFIGURE_FLAGS}
     BUILD_BYPRODUCTS ${LLVM_TARGET_LIBS}
     UPDATE_DISCONNECTED 1
+    DOWNLOAD_NO_PROGRESS 1
   )
 
   ExternalProject_Get_Property(embedded_llvm INSTALL_DIR)
@@ -122,13 +123,9 @@ if(EMBED_LLVM)
   include_directories(SYSTEM ${EMBEDDED_LLVM_INSTALL_DIR}/include)
 
   foreach(llvm_target IN LISTS LLVM_BUILD_TARGETS)
-    string(REPLACE "lib" "" llvm_target_nolib ${llvm_target})
-    string(REPLACE ".a" "" llvm_target_noext ${llvm_target_nolib})
-    string(STRIP ${llvm_target_noext} llvm_target_name)
-
-    list(APPEND LLVM_EMBEDDED_CMAKE_TARGETS ${llvm_target_name})
-    add_library(${llvm_target_name} STATIC IMPORTED)
-    set_property(TARGET ${llvm_target_name} PROPERTY IMPORTED_LOCATION ${EMBEDDED_LLVM_INSTALL_DIR}/lib/${llvm_target})
-    add_dependencies(${llvm_target_name} embedded_llvm)
+    list(APPEND LLVM_EMBEDDED_CMAKE_TARGETS ${llvm_target})
+    add_library(${llvm_target} STATIC IMPORTED)
+    set_property(TARGET ${llvm_target} PROPERTY IMPORTED_LOCATION ${EMBEDDED_LLVM_INSTALL_DIR}/lib/lib${llvm_target}.a)
+    add_dependencies(${llvm_target} embedded_llvm)
   endforeach(llvm_target)
 endif()

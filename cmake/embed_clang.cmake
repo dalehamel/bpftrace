@@ -6,30 +6,36 @@ if(EMBED_CLANG)
   set(LLVM_TARGET_ARCH "x86_64")
   set(LLVM_VERSION "8.0.1")
 
-  # FIXME if EMBED_LLVM isn't set to true
-  # Must verify versions match, try and use system lib
+  if(NOT EMBED_LLVM)
+    # TODO dalehamel
+    # Could save time by linking to host LLVM, but this turns out to be trickier
+    # than expected. Requires downloading and applying distro-specific patches,
+    # and even still there can be linker errors. For now enforce that embedding
+    # clang requires embedding LLVM
+    message(FATAL_ERROR "Embedding clang is currently only supported with embedded LLVM")
+  endif()
 
-  set(CLANG_BUILD_TARGETS libclang.a
-                          libclangAST.a
-                          libclangAnalysis.a
-                          libclangBasic.a
-                          libclangDriver.a
-                          libclangEdit.a
-                          libclangFormat.a
-                          libclangFrontend.a
-                          libclangIndex.a
-                          libclangLex.a
-                          libclangParse.a
-                          libclangRewrite.a
-                          libclangSema.a
-                          libclangSerialization.a
-                          libclangToolingCore.a
-                          libclangToolingInclusions.a
+  set(CLANG_BUILD_TARGETS clang
+                          clangAST
+                          clangAnalysis
+                          clangBasic
+                          clangDriver
+                          clangEdit
+                          clangFormat
+                          clangFrontend
+                          clangIndex
+                          clangLex
+                          clangParse
+                          clangRewrite
+                          clangSema
+                          clangSerialization
+                          clangToolingCore
+                          clangToolingInclusions
                           )
 
   set(CLANG_TARGET_LIBS "")
   foreach(clang_target IN LISTS CLANG_BUILD_TARGETS)
-    list(APPEND CLANG_TARGET_LIBS "<INSTALL_DIR>/lib/${clang_target}")
+    list(APPEND CLANG_TARGET_LIBS "<INSTALL_DIR>/lib/lib${clang_target}.a")
   endforeach(clang_target)
 
   set(CLANG_CONFIGURE_FLAGS  "-Wno-dev "
@@ -45,6 +51,7 @@ if(EMBED_CLANG)
                              "-DLIBCLANG_BUILD_STATIC=ON "
                              "-DLLVM_ENABLE_EH=ON "
                              "-DLLVM_ENABLE_RTTI=ON "
+                             "-DCLANG_BUILD_TOOLS=OFF "
                              "<SOURCE_DIR>")
 
   if(EMBED_LLVM)
@@ -58,6 +65,7 @@ if(EMBED_CLANG)
     COMMAND cp <BINARY_DIR>/lib/libclang.a <INSTALL_DIR>/lib/libclang.a
     BUILD_BYPRODUCTS ${CLANG_TARGET_LIBS}
     UPDATE_DISCONNECTED 1
+    DOWNLOAD_NO_PROGRESS 1
   )
 
   if (EMBED_LLVM)
@@ -71,13 +79,9 @@ if(EMBED_CLANG)
   include_directories(SYSTEM ${EMBEDDED_CLANG_INSTALL_DIR}/include)
 
   foreach(clang_target IN LISTS CLANG_BUILD_TARGETS)
-    string(REPLACE "lib" "" clang_target_nolib ${clang_target})
-    string(REPLACE ".a" "" clang_target_noext ${clang_target_nolib})
-    string(STRIP ${clang_target_noext} clang_target_name)
-
-    list(APPEND CLANG_EMBEDDED_CMAKE_TARGETS ${clang_target_name})
-    add_library(${clang_target_name} STATIC IMPORTED)
-    set_property(TARGET ${clang_target_name} PROPERTY IMPORTED_LOCATION ${EMBEDDED_CLANG_INSTALL_DIR}/lib/${clang_target})
-    add_dependencies(${clang_target_name} embedded_clang)
+    list(APPEND CLANG_EMBEDDED_CMAKE_TARGETS ${clang_target})
+    add_library(${clang_target} STATIC IMPORTED)
+    set_property(TARGET ${clang_target} PROPERTY IMPORTED_LOCATION ${EMBEDDED_CLANG_INSTALL_DIR}/lib/lib${clang_target}.a)
+    add_dependencies(${clang_target} embedded_clang)
   endforeach(clang_target)
 endif()
