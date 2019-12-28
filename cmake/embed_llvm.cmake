@@ -1,6 +1,10 @@
 if(EMBED_LLVM)
   include(ExternalProject)
 
+  if (NOT EMBED_CLANG)
+    message(SEND_ERROR "LLVM artifacts be unused if embedding LLVM without embedding clang")
+  endif()
+
   # FIXME implement triple detection - hardcoded to amd64 for now
   # FIXME set cross compiler triple (CBUILD)via config flags
   # SEE https://github.com/google/libcxx/blob/master/cmake/Modules/GetTriple.cmake
@@ -108,11 +112,13 @@ if(EMBED_LLVM)
     list(APPEND LLVM_TARGET_LIBS "<INSTALL_DIR>/lib/${llvm_target}")
   endforeach(llvm_target)
 
+  # FIXME check SHAs
   ExternalProject_Add(embedded_llvm
     URL https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/llvm-${LLVM_VERSION}.src.tar.xz
     CONFIGURE_COMMAND PATH=$ENV{PATH} cmake  ${LLVM_CONFIGURE_FLAGS}
     BUILD_BYPRODUCTS ${LLVM_TARGET_LIBS}
     UPDATE_DISCONNECTED 1
+    DOWNLOAD_NO_PROGRESS 1
   )
 
   ExternalProject_Get_Property(embedded_llvm INSTALL_DIR)
