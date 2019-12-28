@@ -9,7 +9,12 @@ if(EMBED_LLVM)
   set(CHOST "x86_64-generic-linux")
   set(CBUILD "x86_64-generic-linux")
   set(LLVM_TARGET_ARCH "x86_64")
-  set(LLVM_VERSION "8.0.1")
+
+  if(${LLVM_VERSION} VERSION_EQUAL "8")
+    set(LLVM_FULL_VERSION "8.0.1")
+    set(LLVM_DOWNLOAD_URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_FULL_VERSION}/llvm-${LLVM_FULL_VERSION}.src.tar.xz")
+    set(LLVM_URL_CHECKSUM "SHA256=44787a6d02f7140f145e2250d56c9f849334e11f9ae379827510ed72f12b75e7")
+  endif()
 
   set(LLVM_BUILD_TARGETS LLVMAggressiveInstCombine
                          LLVMAnalysis
@@ -73,35 +78,34 @@ if(EMBED_LLVM)
                          LLVMXRay
                          LLVMSupport)
 
-  # See https://llvm.org/docs/CMake.html#llvm-specific-variables
-  set(LLVM_CONFIGURE_FLAGS   "-Wno-dev "
-                             "-DLLVM_TARGETS_TO_BUILD=BPF "
-                             "-DCMAKE_BUILD_TYPE=MinSizeRel "
-                             "-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> "
-                             "-DLLVM_BINUTILS_INCDIR=/usr/include "
-                             "-DLLVM_BUILD_DOCS=OFF "
-                             "-DLLVM_BUILD_EXAMPLES=OFF "
-                             "-DLLVM_BUILD_EXTERNAL_COMPILER_RT=ON "
-                             "-DLLVM_BUILD_LLVM_DYLIB=ON "
-                             "-DLLVM_BUILD_TESTS=OFF "
-                             "-DLLVM_DEFAULT_TARGET_TRIPLE=${CBUILD} "
-                             "-DLLVM_ENABLE_ASSERTIONS=OFF "
-                             "-DLLVM_ENABLE_CXX1Y=ON "
-                             "-DLLVM_ENABLE_FFI=OFF " # FIXME
-                             "-DLLVM_ENABLE_LIBEDIT=OFF "
-                             "-DLLVM_ENABLE_LIBCXX=OFF "
-                             "-DLLVM_ENABLE_PIC=ON "
-                             "-DLLVM_ENABLE_LIBPFM=OFF "
-                             "-DLLVM_ENABLE_EH=ON "
-                             "-DLLVM_ENABLE_RTTI=ON "
-                             "-DLLVM_ENABLE_SPHINX=OFF "
-                             "-DLLVM_ENABLE_TERMINFO=OFF "
-                             "-DLLVM_ENABLE_ZLIB=ON "
-                             "-DLLVM_HOST_TRIPLE=${CHOST} "
-                             "-DLLVM_INCLUDE_EXAMPLES=OFF "
-                             "-DLLVM_LINK_LLVM_DYLIB=ON "
-                             "-DLLVM_APPEND_VC_REV=OFF "
-                             "<SOURCE_DIR>")
+  set(LLVM_CONFIGURE_FLAGS   -Wno-dev
+                             -DLLVM_TARGETS_TO_BUILD=BPF
+                             -DCMAKE_BUILD_TYPE=MinSizeRel
+                             -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+                             -DLLVM_BINUTILS_INCDIR=/usr/include
+                             -DLLVM_BUILD_DOCS=OFF
+                             -DLLVM_BUILD_EXAMPLES=OFF
+                             -DLLVM_BUILD_EXTERNAL_COMPILER_RT=ON
+                             -DLLVM_BUILD_LLVM_DYLIB=ON
+                             -DLLVM_BUILD_TESTS=OFF
+                             -DLLVM_DEFAULT_TARGET_TRIPLE=${CBUILD}
+                             -DLLVM_ENABLE_ASSERTIONS=OFF
+                             -DLLVM_ENABLE_CXX1Y=ON
+                             -DLLVM_ENABLE_FFI=OFF
+                             -DLLVM_ENABLE_LIBEDIT=OFF
+                             -DLLVM_ENABLE_LIBCXX=OFF
+                             -DLLVM_ENABLE_PIC=ON
+                             -DLLVM_ENABLE_LIBPFM=OFF
+                             -DLLVM_ENABLE_EH=ON
+                             -DLLVM_ENABLE_RTTI=ON
+                             -DLLVM_ENABLE_SPHINX=OFF
+                             -DLLVM_ENABLE_TERMINFO=OFF
+                             -DLLVM_ENABLE_ZLIB=ON
+                             -DLLVM_HOST_TRIPLE=${CHOST}
+                             -DLLVM_INCLUDE_EXAMPLES=OFF
+                             -DLLVM_LINK_LLVM_DYLIB=ON
+                             -DLLVM_APPEND_VC_REV=OFF
+                             )
 
   set(LLVM_TARGET_LIBS "")
   foreach(llvm_target IN LISTS LLVM_BUILD_TARGETS)
@@ -109,8 +113,9 @@ if(EMBED_LLVM)
   endforeach(llvm_target)
 
   ExternalProject_Add(embedded_llvm
-    URL https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/llvm-${LLVM_VERSION}.src.tar.xz
-    CONFIGURE_COMMAND PATH=$ENV{PATH} cmake  ${LLVM_CONFIGURE_FLAGS}
+    URL "${LLVM_DOWNLOAD_URL}"
+    URL_HASH "${LLVM_URL_CHECKSUM}"
+    CMAKE_ARGS "${LLVM_CONFIGURE_FLAGS}"
     BUILD_BYPRODUCTS ${LLVM_TARGET_LIBS}
     UPDATE_DISCONNECTED 1
     DOWNLOAD_NO_PROGRESS 1

@@ -10,6 +10,7 @@ set(STATIC_LINKING OFF CACHE BOOL "Build bpftrace as a statically linked executa
 set(STATIC_LIBC OFF CACHE BOOL "Attempt to embed libc, only known to work with musl. Has issues with dlopen.")
 set(EMBED_LLVM OFF CACHE BOOL "Build LLVM static libs as an ExternalProject and link to these instead of system libs.")
 set(EMBED_CLANG OFF CACHE BOOL "Build Clang static libs as an ExternalProject and link to these instead of system libs.")
+set(LLVM_VERSION "8" CACHE STRING "Embedded LLVM/Clang version to build and link against.")
 
 if(EMBED_LLVM OR EMBED_CLANG)
   if (NOT STATIC_LINKING)

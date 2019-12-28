@@ -1,18 +1,20 @@
 if(EMBED_CLANG)
   include(ExternalProject)
 
-  set(CHOST "x86_64-generic-linux") # FIXME expose these properly as flags, document
-  set(CBUILD "x86_64-generic-linux")
-  set(LLVM_TARGET_ARCH "x86_64")
-  set(LLVM_VERSION "8.0.1")
-
   if(NOT EMBED_LLVM)
     # TODO dalehamel
     # Could save time by linking to host LLVM, but this turns out to be trickier
-    # than expected. Requires downloading and applying distro-specific patches,
-    # and even still there can be linker errors. For now enforce that embedding
-    # clang requires embedding LLVM
+    # than expected. Requires downloading and applying distro-specific patches
+    # with a custom quilt series and even still there can be linker errors.
+    # For now enforce that embedding clang requires embedding LLVM so that there
+    # is a predictable link target for clang.
     message(FATAL_ERROR "Embedding clang is currently only supported with embedded LLVM")
+  endif()
+
+  if(${LLVM_VERSION} VERSION_EQUAL "8")
+    set(LLVM_FULL_VERSION "8.0.1")
+    set(CLANG_DOWNLOAD_URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_FULL_VERSION}/cfe-${LLVM_FULL_VERSION}.src.tar.xz")
+    set(CLANG_URL_CHECKSUM "SHA256=70effd69f7a8ab249f66b0a68aba8b08af52aa2ab710dfb8a0fba102685b1646")
   endif()
 
   set(CLANG_BUILD_TARGETS clang
@@ -38,29 +40,30 @@ if(EMBED_CLANG)
     list(APPEND CLANG_TARGET_LIBS "<INSTALL_DIR>/lib/lib${clang_target}.a")
   endforeach(clang_target)
 
-  set(CLANG_CONFIGURE_FLAGS  "-Wno-dev "
-                             "-DLLVM_TARGETS_TO_BUILD=BPF "
-                             "-DCMAKE_BUILD_TYPE=MinSizeRel "
-                             "-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> "
-                             "-DCMAKE_VERBOSE_MAKEFILE=OFF "
-                             "-DCLANG_VENDOR=bpftrace "
-                             "-DCLANG_BUILD_EXAMPLES=OFF "
-                             "-DCLANG_INCLUDE_DOCS=OFF "
-                             "-DCLANG_INCLUDE_TESTS=OFF "
-                             "-DCLANG_PLUGIN_SUPPORT=ON "
-                             "-DLIBCLANG_BUILD_STATIC=ON "
-                             "-DLLVM_ENABLE_EH=ON "
-                             "-DLLVM_ENABLE_RTTI=ON "
-                             "-DCLANG_BUILD_TOOLS=OFF "
-                             "<SOURCE_DIR>")
+  set(CLANG_CONFIGURE_FLAGS  -Wno-dev
+                             -DLLVM_TARGETS_TO_BUILD=BPF
+                             -DCMAKE_BUILD_TYPE=MinSizeRel
+                             -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+                             -DCMAKE_VERBOSE_MAKEFILE=OFF
+                             -DCLANG_VENDOR=bpftrace
+                             -DCLANG_BUILD_EXAMPLES=OFF
+                             -DCLANG_INCLUDE_DOCS=OFF
+                             -DCLANG_INCLUDE_TESTS=OFF
+                             -DCLANG_PLUGIN_SUPPORT=ON
+                             -DLIBCLANG_BUILD_STATIC=ON
+                             -DLLVM_ENABLE_EH=ON
+                             -DLLVM_ENABLE_RTTI=ON
+                             -DCLANG_BUILD_TOOLS=OFF
+                             )
 
   if(EMBED_LLVM)
-    list(INSERT CLANG_CONFIGURE_FLAGS 0 "-DCMAKE_PREFIX_PATH=${EMBEDDED_LLVM_INSTALL_DIR}/lib/cmake/llvm ")
+    list(APPEND CLANG_CONFIGURE_FLAGS  -DCMAKE_PREFIX_PATH=${EMBEDDED_LLVM_INSTALL_DIR}/lib/cmake/llvm)
   endif()
 
   ExternalProject_Add(embedded_clang
-    URL https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/cfe-${LLVM_VERSION}.src.tar.xz
-    CONFIGURE_COMMAND PATH=$ENV{PATH} cmake  ${CLANG_CONFIGURE_FLAGS} # FIXME just specify as cmake opts?
+    URL "${CLANG_DOWNLOAD_URL}"
+    URL_HASH "${CLANG_URL_CHECKSUM}"
+    CMAKE_ARGS "${CLANG_CONFIGURE_FLAGS}"
     INSTALL_COMMAND make install
     COMMAND cp <BINARY_DIR>/lib/libclang.a <INSTALL_DIR>/lib/libclang.a
     BUILD_BYPRODUCTS ${CLANG_TARGET_LIBS}
