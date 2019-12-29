@@ -41,6 +41,15 @@ CONFIG_FTRACE_SYSCALLS=y
 This can be verified by running the `check_kernel_features` script from the
 `scripts` directory.
 
+# Standalone binaries
+
+bpftrace is available as a standalone binary, linked against a particular glibc
+version for compatibility. This should be a robust and universally compatible
+way to install bpftrace, as it eliminates the need to separately install bcc
+or LLVM.
+
+These images can be downloaded from Travis CI releases page.
+
 # Package install
 
 ## Ubuntu packages

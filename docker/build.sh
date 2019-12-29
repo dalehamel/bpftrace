@@ -28,7 +28,7 @@ with_timeout()
     CI_TIME_REMAINING=$((CI_TIME_REMAINING-elapsed))
     echo "$CI_TIME_REMAINING remains for other jobs"
 
-    if [[ $rc == 124 ]];then
+    if [[ $rc -eq 124 ]];then
       echo "Exiting early on timeout to upload cache and retry..."
       echo "This is expected on a cold cache / new LLVM release."
       echo "Retry the build until it passes, so long as it progresses."
