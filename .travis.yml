@@ -10,6 +10,11 @@ language:
 services:
   - docker
 
+#addons:
+#  apt:
+#    packages:
+#    - git-restore-mtime # used to set mtimes to commit times, to determine cache validity
+
 matrix:
   include:
     - name: "clang-format"
@@ -70,9 +75,14 @@ script:
   - sudo mkdir -p ${PWD}/build-$TYPE-$BASE/embedded_llvm-prefix # create (empty) cache directories if not exist
   - sudo mkdir -p ${PWD}/build-$TYPE-$BASE/embedded_clang-prefix
 
+cache components:
+  - cd $HOME/build/iovisor/bpftrace/build-$TYPE-$BASE/embedded_llvm-prefix/ && if [[ -f touch_order.txt ]]; then; while read fn; do; touch $fn; done < touch_order.txt; fi
+  - cd $HOME/build/iovisor/bpftrace/build-$TYPE-$BASE/embedded_clang-prefix/ && if [[ -f touch_order.txt ]]; then; while read fn; do; touch $fn; done < touch_order.txt; fi
+#  - /usr/lib/git-core/git-restore-mtime
+
 before_cache:
-  - echo "Cache dir $HOME/build/iovisor/bpftrace/build-$TYPE-$BASE/embedded_llvm-prefix/"
-  - ls -l
+  - cd $HOME/build/iovisor/bpftrace/build-$TYPE-$BASE/embedded_llvm-prefix/ && find . -type f -printf "%T+\t%p\n" | sort | cut -f 2 > touch_order.txt
+  - cd $HOME/build/iovisor/bpftrace/build-$TYPE-$BASE/embedded_clang-prefix/ && find . -type f -printf "%T+\t%p\n" | sort | cut -f 2 > touch_order.txt
 
 cache:
   directories:
