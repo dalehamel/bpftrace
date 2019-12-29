@@ -10,25 +10,36 @@ EMBED_LLVM=${EMBED_LLVM:-OFF}
 EMBED_CLANG=${EMBED_CLANG:-OFF}
 DEPS_ONLY=${DEPS_ONLY:-OFF}
 RUN_TESTS=${RUN_TESTS:-1}
+CI_TIMEOUT=${CI_TIMEOUT:-0}
 
 # If running on Travis, we may need several builds incrementally building up
 # the cache in order to cold-start the build cache within the 50 minute travis
 # job timeout. The gist is to kill the job safely and safe the cache.
 with_timeout()
 {
+  if [[ $CI_TIMEOUT -gt 0 ]];then
+    set +e
+    [[ -z $CI_TIME_REMAINING ]] && CI_TIME_REMAINING=$CI_TIMEOUT
+    start_time="$(date -u +%s)"
+    timeout $CI_TIME_REMAINING $@
+    rc=$?
+    end_time="$(date -u +%s)"
+    elapsed="$(($end_time-$start_time))"
+    CI_TIME_REMAINING=$((CI_TIME_REMAINING-elapsed))
+    echo "$CI_TIME_REMAINING remains for other jobs"
 
-  # FIXME detect and only do this on travis, else just call original
-  set +e
-  timeout 2400 $@
-  rc=$?
-
-  if [[ $rc == 124 ]];then
-    echo "Exiting early on timeout to upload cache and retry..."
-    echo "This is expected on a cold cache / new LLVM release."
-    echo "Retry the build until it passes, so long as it progresses."
-    exit 0
+    if [[ $rc == 124 ]];then
+      echo "Exiting early on timeout to upload cache and retry..."
+      echo "This is expected on a cold cache / new LLVM release."
+      echo "Retry the build until it passes, so long as it progresses."
+      exit 0
+    elif [[ $rc -ne 0 ]];then
+      exit $rc # preserve set -e behavior on non-timeout
+    fi
+    set -e # resume set -e
+  else
+    $@
   fi
-  set -e
 }
 
 # Build bpftrace
