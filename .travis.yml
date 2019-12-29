@@ -70,6 +70,10 @@ script:
   - sudo mkdir -p ${PWD}/build-$TYPE-$BASE/embedded_llvm # create (empty) cache directories if not exist
   - sudo mkdir -p ${PWD}/build-$TYPE-$BASE/embedded_clang
 
+before_cache:
+  - echo "Cache dir $HOME/build/iovisor/bpftrace/build-$TYPE-$BASE/embedded_llvm"
+  - find $HOME/build/iovisor/bpftrace/build-$TYPE-$BASE/embedded_llvm
+
 cache:
   directories:
     - $HOME/build/iovisor/bpftrace/build-$TYPE-$BASE/embedded_llvm

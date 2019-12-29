@@ -13,7 +13,7 @@ RUN_TESTS=${RUN_TESTS:-1}
 
 # If running on Travis, we may need several builds incrementally building up
 # the cache in order to cold-start the build cache within the 50 minute travis
-# job timeout. The gist is to kill the job safely
+# job timeout. The gist is to kill the job safely and safe the cache.
 with_timeout()
 {
 
