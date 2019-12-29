@@ -1,13 +1,14 @@
 #!/bin/bash
 
 set -e
-set -x
+set -x # FIXME remove before review
 
 STATIC_LINKING=${STATIC_LINKING:-OFF}
 STATIC_LIBC=${STATIC_LIBC:-OFF}
+LLVM_VERSION=${LLVM_VERSION:-8} # default llvm to latest version
 EMBED_LLVM=${EMBED_LLVM:-OFF}
 EMBED_CLANG=${EMBED_CLANG:-OFF}
-LLVM_VERSION=${LLVM_VERSION:-8} # default llvm to latest version
+DEPS_ONLY=${DEPS_ONLY:-OFF}
 RUN_TESTS=${RUN_TESTS:-1}
 
 # If running on Travis, we may need several builds incrementally building up
@@ -20,10 +21,6 @@ with_timeout()
   timeout 2400 $@
   rc=$?
 
-  # TODO dalehamel
-  # The drawback of this is that it inappropriately sets the overall build
-  # to passing, perhaps another job can check if the cache was cold and fail
-  # if a retry occurs, to keep CI verity?
   if [[ $rc == 124 ]];then
     echo "Exiting early on timeout to upload cache and retry..."
     exit 0
@@ -40,8 +37,9 @@ shift 2
 
 # It is necessary to build embedded llvm and clang targets first,
 # so that their headers can be referenced
-[[ $EMBED_LLVM  = "ON" ]] && with_timeout make embedded_llvm "$@"
-[[ $EMBED_CLANG = "ON" ]] && with_timeout make embedded_clang "$@"
+[[ $EMBED_LLVM  == "ON" ]] && with_timeout make embedded_llvm "$@"
+[[ $EMBED_CLANG == "ON" ]] && with_timeout make embedded_clang "$@"
+[[ $DEPS_ONLY == "ON" ]] && exit 0
 make "$@"
 
 if [ $RUN_TESTS = 1 ]; then
