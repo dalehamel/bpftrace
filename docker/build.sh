@@ -23,6 +23,8 @@ with_timeout()
 
   if [[ $rc == 124 ]];then
     echo "Exiting early on timeout to upload cache and retry..."
+    echo "This is expected on a cold cache / new LLVM release."
+    echo "Retry the build until it passes, so long as it progresses."
     exit 0
   fi
 }
