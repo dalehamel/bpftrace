@@ -71,13 +71,16 @@ script:
   - sudo mkdir -p ${PWD}/build-$TYPE-$BASE/embedded_clang
 
 before_cache:
-  - echo "Cache dir $HOME/build/iovisor/bpftrace/build-$TYPE-$BASE/embedded_llvm"
-  - find $HOME/build/iovisor/bpftrace/build-$TYPE-$BASE/embedded_llvm
+  - echo "Cache dir $HOME/build/iovisor/bpftrace/build-$TYPE-$BASE/embedded_llvm/"
+  - find $HOME/build/iovisor/bpftrace/build-$TYPE-$BASE/embedded_llvm/
+  - echo "$PWD"
+  - ls -l
+  - find .
 
 cache:
   directories:
-    - $HOME/build/iovisor/bpftrace/build-$TYPE-$BASE/embedded_llvm
-    - $HOME/build/iovisor/bpftrace/build-$TYPE-$BASE/embedded_clang
+    - $HOME/build/iovisor/bpftrace/build-$TYPE-$BASE/embedded_llvm/
+    - $HOME/build/iovisor/bpftrace/build-$TYPE-$BASE/embedded_clang/
 
 notifications:
   irc:
