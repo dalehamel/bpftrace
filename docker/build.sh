@@ -18,6 +18,7 @@ with_timeout()
 {
 
   # FIXME detect and only do this on travis, else just call original
+  set +e
   timeout 2400 $@
   rc=$?
 
@@ -27,6 +28,7 @@ with_timeout()
     echo "Retry the build until it passes, so long as it progresses."
     exit 0
   fi
+  set -e
 }
 
 # Build bpftrace
