@@ -108,6 +108,10 @@ target_compile_definitions(bpftrace_test PRIVATE HAVE_SEND_SIGNAL)
 target_link_libraries(bpftrace_test arch ast parser resources)
 
 if (STATIC_LINKING)
+  if(EMBED_LLVM OR EMBED_CLANG)
+    set_target_properties(bpftrace_test PROPERTIES LINK_FLAGS "${EMBEDDED_LINK_FLAGS}")
+  endif()
+
   target_link_libraries(bpftrace_test ${LIBBCC_LIBRARIES})
   target_link_libraries(bpftrace_test ${LIBBPF_LIBRARY_STATIC})
   target_link_libraries(bpftrace_test ${LIBBCC_LOADER_LIBRARY_STATIC})
