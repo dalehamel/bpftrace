@@ -38,6 +38,9 @@ RUN apt-get update && apt-get install -y \
 # Build BCC and install static libs
 RUN mkdir -p /src && git clone https://github.com/iovisor/bcc /src/bcc
 WORKDIR /src/bcc
+
+# FIXME match build type - debug -> relwithdebuginfo
+# release - MinSizeRel
 RUN git reset --hard $bcc_ref && mkdir build && cd build && \
     cmake -DCMAKE_INSTALL_PREFIX=/usr/local ../ && make -j$(nproc) && \
     make install &&  mkdir -p /usr/local/lib && \
