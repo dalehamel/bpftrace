@@ -55,11 +55,11 @@ shift 2
 [[ $EMBED_LLVM  == "ON" ]] && with_timeout make embedded_llvm "$@"
 [[ $EMBED_CLANG == "ON" ]] && with_timeout make embedded_clang "$@"
 [[ $DEPS_ONLY == "ON" ]] && exit 0
-make "$@"
+with_timeout make "$@"
 
 if [ $RUN_TESTS = 1 ]; then
   if [ "$RUN_ALL_TESTS" = "1" ]; then
-    ctest -V
+    with_timeout ctest -V
   else
     ./tests/bpftrace_test $TEST_ARGS;
   fi
