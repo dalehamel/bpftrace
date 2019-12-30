@@ -12,13 +12,24 @@ if(EMBED_CLANG)
 
   if(NOT EMBED_LLVM)
     # see docs/embeded_builds for why
+# Could *maybe* be used to link to system LLVM?
+# https://github.com/llvm/llvm-project/releases/download/llvmorg-8.0.1/polly-8.0.1.src.tar.xz
     message(FATAL_ERROR "Embedding clang is currently only supported with embedded LLVM")
   endif()
 
-  if(${LLVM_VERSION} VERSION_EQUAL "8")
+  if(${LLVM_VERSION} VERSION_EQUAL "9" OR ${LLVM_VERSION} VERSION_GREATER "9" )
+    set(LLVM_FULL_VERSION "9.0.1")
+    set(CLANG_DOWNLOAD_URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_FULL_VERSION}/clang-${LLVM_FULL_VERSION}.src.tar.xz")
+    set(CLANG_URL_CHECKSUM "SHA256=5778512b2e065c204010f88777d44b95250671103e434f9dc7363ab2e3804253")
+#https://github.com/llvm/llvm-project/releases/download/llvmorg-9.0.1/clang-9.0.1.src.tar.xz
+  elseif(${LLVM_VERSION} VERSION_EQUAL "8" OR ${LLVM_VERSION} VERSION_GREATER "8" )
     set(LLVM_FULL_VERSION "8.0.1")
     set(CLANG_DOWNLOAD_URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_FULL_VERSION}/cfe-${LLVM_FULL_VERSION}.src.tar.xz")
     set(CLANG_URL_CHECKSUM "SHA256=70effd69f7a8ab249f66b0a68aba8b08af52aa2ab710dfb8a0fba102685b1646")
+  elseif(${LLVM_VERSION} VERSION_EQUAL "7" OR ${LLVM_VERSION} VERSION_GREATER "7" )
+    set(LLVM_FULL_VERSION "7.1.0")
+    set(CLANG_DOWNLOAD_URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_FULL_VERSION}/cfe-${LLVM_FULL_VERSION}.src.tar.xz")
+    set(CLANG_URL_CHECKSUM "SHA256=e97dc472aae52197a4d5e0185eb8f9e04d7575d2dc2b12194ddc768e0f8a846d")
   else()
     message(FATAL_ERROR "No supported LLVM version has been specified with LLVM_VERSION, aborting")
   endif()
