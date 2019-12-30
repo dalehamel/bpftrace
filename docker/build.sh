@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -e
-set -x # FIXME remove before review
 
 STATIC_LINKING=${STATIC_LINKING:-OFF}
 STATIC_LIBC=${STATIC_LIBC:-OFF}
@@ -14,7 +13,8 @@ CI_TIMEOUT=${CI_TIMEOUT:-0}
 
 # If running on Travis, we may need several builds incrementally building up
 # the cache in order to cold-start the build cache within the 50 minute travis
-# job timeout. The gist is to kill the job safely and safe the cache.
+# job timeout. The gist is to kill the job safely and safe the cache and run
+# again until the build cache is fully warmed
 with_timeout()
 {
   if [[ $CI_TIMEOUT -gt 0 ]];then
@@ -32,6 +32,7 @@ with_timeout()
       echo "Exiting early on timeout to upload cache and retry..."
       echo "This is expected on a cold cache / new LLVM release."
       echo "Retry the build until it passes, so long as it progresses."
+      echo "see docs/embedded_builds.md for more info"
       exit 0
     elif [[ $rc -ne 0 ]];then
       exit $rc # preserve set -e behavior on non-timeout
@@ -55,11 +56,11 @@ shift 2
 [[ $EMBED_LLVM  == "ON" ]] && with_timeout make embedded_llvm "$@"
 [[ $EMBED_CLANG == "ON" ]] && with_timeout make embedded_clang "$@"
 [[ $DEPS_ONLY == "ON" ]] && exit 0
-with_timeout make "$@"
+make "$@"
 
 if [ $RUN_TESTS = 1 ]; then
   if [ "$RUN_ALL_TESTS" = "1" ]; then
-    with_timeout ctest -V
+    ctest -V
   else
     ./tests/bpftrace_test $TEST_ARGS;
   fi

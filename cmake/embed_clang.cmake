@@ -11,12 +11,7 @@ if(EMBED_CLANG)
   endif()
 
   if(NOT EMBED_LLVM)
-    # TODO dalehamel
-    # Could save time by linking to host LLVM, but this turns out to be trickier
-    # than expected. Requires downloading and applying distro-specific patches
-    # with a custom quilt series and even still there can be linker errors.
-    # For now enforce that embedding clang requires embedding LLVM so that there
-    # is a predictable link target for clang.
+    # see docs/embeded_builds for why
     message(FATAL_ERROR "Embedding clang is currently only supported with embedded LLVM")
   endif()
 
@@ -24,6 +19,8 @@ if(EMBED_CLANG)
     set(LLVM_FULL_VERSION "8.0.1")
     set(CLANG_DOWNLOAD_URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_FULL_VERSION}/cfe-${LLVM_FULL_VERSION}.src.tar.xz")
     set(CLANG_URL_CHECKSUM "SHA256=70effd69f7a8ab249f66b0a68aba8b08af52aa2ab710dfb8a0fba102685b1646")
+  else()
+    message(FATAL_ERROR "No supported LLVM version has been specified with LLVM_VERSION, aborting")
   endif()
 
   set(CLANG_BUILD_TARGETS clang

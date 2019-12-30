@@ -44,12 +44,17 @@ necessitates having access to LLVM static libraries as well.
 
 ## Embedding LLVM
 
-The ubuntu (and probably redhat?) packages don't bundle libclang, and have a
+The Debian and Redhat LLVM packages don't bundle libclang, and have a
 unavoidable dynamic library dependencies. This makes linking statically to
 system provided LLVM is currently impracticable, as there is no way to shake
 these dynamic dependencies with the system provided packages. 
 
-FIXME look into ubuntu cmake options
+This is because the Debian builds of LLVM [force linking to LibPolly](https://salsa.debian.org/pkg-llvm-team/llvm-toolchain/blob/8/debian/rules#L165),
+but do not provide a static library for this, making it impossible to link
+statically against this.
+
+For this reason it is necessary to compile LLVM from source, to satisfy the
+static dependencies that Clang has on LLVM libraries.
 
 ### Distribution patches
 
@@ -77,3 +82,15 @@ library dependencies, when a new embedded LLVM target is added or the cache is
 cleared. Once the cache is warmed, the build times should be comparable to
 other builds.
 
+## Debug build
+
+The debug build is too large to complete successfully on Travis CI. The debug
+artifacts for LLVM and Clang build process are around 35GB, which simply takes
+too long to save and restore on travis, resulting in builds being killed due
+to travis' 10 minute no-output timeout. This makes the incremental approach
+used to warm the cache for the Release binary impracticable. 
+
+Debug builds ultimately produce a bpftrace binary that is 1.2GB, and not
+practical for redistribution. When run locally or on a less restricted CI
+environment, embedded Debug build should still complete and pass all tests, but
+it may take 1-2 hours for this to complete from a cold cache.
