@@ -22,7 +22,22 @@ present all of the necessary built artifacts to statically link against LLVM and
 Clang, despite the project [llvm catering to this with its own CMake build
 process](https://llvm.org/docs/CMake.html#embedding-llvm-in-your-project).
 
-## Embedding clang
+# Build times
+
+To build from scratch on a modern development laptop with an 8-way parallel
+build, bpftrace and its dependencies can be built in about 30 minutes.
+
+Subsequent builds will not have this overhead, once the embedded dependencies
+are built and cached, and will proceed at the comparable speeds as dynamically
+linked builds.
+
+## CI environments
+
+Internal CI environments with any sort of caching mechanism should be able to
+just cache any external project's build directories, and the overhead of
+building on CI shouldn't be any different than other CI jobs.
+
+# Embedding clang
 
 Clang is the actual dependency of bpftrace, as the src/ast folder pulls it in
 for the interface that bpftraces uses for LLVM's code generation platform, which
@@ -42,7 +57,7 @@ itemizing the libraries that will be link-time dependencies of bpftrace.
 In turn, these clang libraries depend heavily on LLVM libraries, so this
 necessitates having access to LLVM static libraries as well.
 
-## Embedding LLVM
+# Embedding LLVM
 
 The Debian and Redhat LLVM packages don't bundle libclang, and have a
 unavoidable dynamic library dependencies. This makes linking statically to
@@ -56,7 +71,7 @@ statically against this.
 For this reason it is necessary to compile LLVM from source, to satisfy the
 static dependencies that Clang has on LLVM libraries.
 
-### Distribution patches
+## Distribution patches
 
 The LLVM builds maintained by distributions have patches on top of the tagged
 releases. It may be favorable from time-to-time to pull in these patches.
@@ -94,3 +109,26 @@ Debug builds ultimately produce a bpftrace binary that is 1.2GB, and not
 practical for redistribution. When run locally or on a less restricted CI
 environment, embedded Debug build should still complete and pass all tests, but
 it may take 1-2 hours for this to complete from a cold cache.
+
+# libc options
+
+## glibc
+
+This is the default, and currently only tested and supported.
+
+To make bpftrace more portable, it can be linked to an older glibc, as provided
+by ubuntu 16.04 (Xenial). This links against glibc 2.23, and any system running
+this or newer should be able to run this build.
+
+bpftrace is also built against more recent glibc from ubuntio bionic (18.04),
+which provides 2.27.
+
+## musl (not yet supported)
+
+The original static build of bpftrace built against musl statically, but there
+is no reason why it could not link against musl dynamically.
+
+## uclibc (not yet supported)
+
+Theoretically no reason this shouldn't work to dynamically link to, may be
+helpful for supporting bpftrace on embedded environments.

@@ -1,0 +1,76 @@
+FROM ubuntu:xenial as bccbuilder
+
+ARG bcc_ref="v0.12.0"
+ARG LLVM_VERSION="8"
+ENV LLVM_VERSION=$LLVM_VERSION
+
+RUN apt-get update && apt-get install -y curl gnupg &&\
+    llvmRepository="\n\
+deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial main\n\
+deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial main\n\
+deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-${LLVM_VERSION} main\n\
+deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial-${LLVM_VERSION} main\n" &&\
+    echo $llvmRepository >> /etc/apt/sources.list && \
+    curl -L https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
+
+RUN apt-get update && apt-get install -y \
+      bison \
+      binutils-dev \
+      cmake \
+      flex \
+      g++ \
+      git \
+      libelf-dev \
+      zlib1g-dev \
+      libiberty-dev \
+      libbfd-dev \
+      clang-${LLVM_VERSION} \
+      libclang-${LLVM_VERSION}-dev \
+      libclang-common-${LLVM_VERSION}-dev \
+      libclang1-${LLVM_VERSION} \
+      llvm-${LLVM_VERSION} \
+      llvm-${LLVM_VERSION}-dev \
+      llvm-${LLVM_VERSION}-runtime \
+      libllvm${LLVM_VERSION} \
+      systemtap-sdt-dev \
+      python3
+
+# Cmake that comes with xenial is tool old, install the latest manually
+ADD https://github.com/Kitware/CMake/releases/download/v3.16.2/cmake-3.16.2-Linux-x86_64.sh /cmake.sh
+RUN mkdir /opt/cmake && \
+    sh /cmake.sh --prefix=/opt/cmake --skip-license && \
+    ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
+
+# Build BCC and install static libs
+RUN mkdir -p /src && git clone https://github.com/iovisor/bcc /src/bcc
+WORKDIR /src/bcc
+
+# FIXME match build type - debug -> relwithdebuginfo
+# release - MinSizeRel
+RUN git reset --hard $bcc_ref && mkdir build && cd build && \
+    cmake -DCMAKE_INSTALL_PREFIX=/usr/local ../ && make -j$(nproc) && \
+    make install &&  mkdir -p /usr/local/lib && \
+    cp src/cc/libbcc.a /usr/local/lib/libbcc.a && \
+    cp src/cc/libbcc-loader-static.a /usr/local/lib/libbcc-loader-static.a && \
+    cp ./src/cc/libbcc_bpf.a /usr/local/lib/libbpf.a
+
+#RUN apt-get remove -y --purge \
+#      clang-${LLVM_VERSION} \
+#      libclang-${LLVM_VERSION}-dev \
+#      libclang-common-${LLVM_VERSION}-dev \
+#      libclang1-${LLVM_VERSION} \
+#      llvm-${LLVM_VERSION} \
+#      llvm-${LLVM_VERSION}-dev \
+#      llvm-${LLVM_VERSION}-runtime \
+#      libllvm${LLVM_VERSION}
+#COPY --from=bccbuilder /usr/local/include/bcc /usr/local/include/bcc
+#COPY --from=bccbuilder /src/bcc/src/cc/libbpf/src/bpf.h /usr/local/include/bpf/bpf.h
+#COPY --from=bccbuilder /src/bcc/src/cc/libbpf/src/btf.h /usr/local/include/bpf/btf.h
+#COPY --from=bccbuilder /src/bcc/src/cc/libbpf/src/libbpf.h /usr/local/include/bpf/libbpf.h
+#COPY --from=bccbuilder /src/bcc/build/src/cc/libbcc.a /usr/local/lib/libbcc.a
+#COPY --from=bccbuilder /src/bcc/build/src/cc/libbcc-loader-static.a /usr/local/lib/libbcc-loader-static.a
+#COPY --from=bccbuilder /src/bcc/build/src/cc/libbcc_bpf.a /usr/local/lib/libbpf.a
+
+COPY build.sh /build.sh
+RUN chmod 755 /build.sh
+ENTRYPOINT ["bash", "/build.sh"]
