@@ -10,6 +10,15 @@ if(EMBED_LLVM)
   set(CBUILD "x86_64-generic-linux")
   set(LLVM_TARGET_ARCH "x86_64")
 
+  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    # https://salsa.debian.org/pkg-llvm-team/llvm-toolchain/blob/8/debian/rules
+    set(EMBEDDED_BUILD_TYPE "RelWithDebInfo")
+  elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(EMBEDDED_BUILD_TYPE "MinSizeRel")
+  else()
+    set(EMBEDDED_BUILD_TYPE ${CMAKE_BUILD_TYPE})
+  endif()
+
   if(${LLVM_VERSION} VERSION_EQUAL "8")
     set(LLVM_FULL_VERSION "8.0.1")
     set(LLVM_DOWNLOAD_URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_FULL_VERSION}/llvm-${LLVM_FULL_VERSION}.src.tar.xz")
@@ -80,7 +89,7 @@ if(EMBED_LLVM)
 
   set(LLVM_CONFIGURE_FLAGS   -Wno-dev
                              -DLLVM_TARGETS_TO_BUILD=BPF
-                             -DCMAKE_BUILD_TYPE=MinSizeRel
+                             -DCMAKE_BUILD_TYPE=${EMBEDDED_BUILD_TYPE}
                              -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
                              -DLLVM_BINUTILS_INCDIR=/usr/include
                              -DLLVM_BUILD_DOCS=OFF

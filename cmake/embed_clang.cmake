@@ -1,6 +1,15 @@
 if(EMBED_CLANG)
   include(ExternalProject)
 
+  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    # https://salsa.debian.org/pkg-llvm-team/llvm-toolchain/blob/8/debian/rules
+    set(EMBEDDED_BUILD_TYPE "RelWithDebInfo")
+  elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(EMBEDDED_BUILD_TYPE "MinSizeRel")
+  else()
+    set(EMBEDDED_BUILD_TYPE ${CMAKE_BUILD_TYPE})
+  endif()
+
   if(NOT EMBED_LLVM)
     # TODO dalehamel
     # Could save time by linking to host LLVM, but this turns out to be trickier
@@ -42,7 +51,7 @@ if(EMBED_CLANG)
 
   set(CLANG_CONFIGURE_FLAGS  -Wno-dev
                              -DLLVM_TARGETS_TO_BUILD=BPF
-                             -DCMAKE_BUILD_TYPE=MinSizeRel
+                             -DCMAKE_BUILD_TYPE=${EMBEDDED_BUILD_TYPE}
                              -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
                              -DCMAKE_VERBOSE_MAKEFILE=OFF
                              -DCLANG_VENDOR=bpftrace
