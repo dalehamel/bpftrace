@@ -4,6 +4,9 @@ ARG bcc_ref="v0.12.0"
 ARG LLVM_VERSION="8"
 ENV LLVM_VERSION=$LLVM_VERSION
 
+# There is no need need for most of this once
+# https://github.com/iovisor/bcc/pull/2677 merges, as this is all to build
+# the bcc static dependencies
 RUN apt-get update && apt-get install -y curl gnupg &&\
     llvmRepository="\n\
 deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial main\n\
