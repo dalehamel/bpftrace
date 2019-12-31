@@ -29,12 +29,11 @@ if(EMBED_CLANG)
 
   set(CLANG_PATCH_COMMAND "/bin/true")
   if(NOT EMBED_LLVM)
-    # see docs/embeded_builds for why
-# Could *maybe* be used to link to system LLVM?
-# https://github.com/llvm/llvm-project/releases/download/llvmorg-8.0.1/polly-8.0.1.src.tar.xz
-    include(bpftrace_util)
+    # If not linking and building against embedded LLVM, patches may need to
+    # be applied to work with the distribution LLVM. This is handled by a
+    # helper function
+    include(embed_helpers)
     prepare_clang_patches()
-    #message(FATAL_ERROR "Embedding clang is currently only supported with embedded LLVM")
   endif()
 
   set(CLANG_BUILD_TARGETS clang
@@ -84,7 +83,7 @@ if(EMBED_CLANG)
     URL "${CLANG_DOWNLOAD_URL}"
     URL_HASH "${CLANG_URL_CHECKSUM}"
     CMAKE_ARGS "${CLANG_CONFIGURE_FLAGS}"
-    PATCH_COMMAND /bin/sh -c "${CLANG_PATCH_COMMAND}"
+    PATCH_COMMAND /bin/bash -c "${CLANG_PATCH_COMMAND}"
     INSTALL_COMMAND make install
     COMMAND cp <BINARY_DIR>/lib/libclang.a <INSTALL_DIR>/lib/libclang.a
     BUILD_BYPRODUCTS ${CLANG_TARGET_LIBS}

@@ -59,17 +59,18 @@ necessitates having access to LLVM static libraries as well.
 
 # Embedding LLVM
 
-The Debian and Redhat LLVM packages don't bundle libclang, and have a
-unavoidable dynamic library dependencies. This makes linking statically to
-system provided LLVM is currently impracticable, as there is no way to shake
-these dynamic dependencies with the system provided packages. 
+It is possible to avoid embedding LLVM by applying distribution specific
+patches to embedded clang, so that it will be patch-compatible with the LLVM
+libraries shipped with the target system.
 
-This is because the Debian builds of LLVM [force linking to LibPolly](https://salsa.debian.org/pkg-llvm-team/llvm-toolchain/blob/8/debian/rules#L165),
-but do not provide a static library for this, making it impossible to link
-statically against this.
+This can save time by avoiding building LLVM altogether, but as distributions
+LLVM libraries may have more dependencies and other bloat than the embedded
+LLVM, this can result in a larger executable. On Ubuntu, the size of the
+bpftrace executable is increased from 52MB to 88MB, due to the extra libraries
+that must be pulled in.
 
-For this reason it is necessary to compile LLVM from source, to satisfy the
-static dependencies that Clang has on LLVM libraries.
+This is still a desirable time-saver where space doesn't matter, such as when
+doing Debug builds - it can avoid building 15GB of LLVM libraries.
 
 ## Distribution patches
 
@@ -78,6 +79,10 @@ releases. It may be favorable from time-to-time to pull in these patches.
 
 By downloading patches from an external source and writing a custom series
 file, `quilt` can be used to apply arbitrary patches to embedded sources.
+
+The `embed_helpers.cmake` file has the necessary helper functions to download
+patches, add them to a patch series, and set the patch command to be used with
+the ExternalProject.
 
 # Building on CI
 
@@ -110,18 +115,17 @@ practical for redistribution. When run locally or on a less restricted CI
 environment, embedded Debug build should still complete and pass all tests, but
 it may take 1-2 hours for this to complete from a cold cache.
 
+As a way to ensure that debug builds can succeed, the system LLVM may be linked
+to by setting `EMBED_LLVM=OFF`.
+
 # libc options
 
 ## glibc
 
 This is the default, and currently only tested and supported.
 
-To make bpftrace more portable, it can be linked to an older glibc, as provided
-by ubuntu 16.04 (Xenial). This links against glibc 2.23, and any system running
-this or newer should be able to run this build.
-
-bpftrace is also built against more recent glibc from ubuntio bionic (18.04),
-which provides 2.27.
+bpftrace is built against the glibc from Ubuntu bionic (18.04), which provides
+2.27.
 
 ## musl (not yet supported)
 
