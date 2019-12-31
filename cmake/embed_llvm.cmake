@@ -32,7 +32,7 @@ if(EMBED_LLVM)
     set(LLVM_DOWNLOAD_URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_FULL_VERSION}/llvm-${LLVM_FULL_VERSION}.src.tar.xz")
     set(LLVM_URL_CHECKSUM "SHA256=1bcc9b285074ded87b88faaedddb88e6b5d6c331dfcfb57d7f3393dd622b3764")
   else()
-    message(FATAL_ERROR "No supported LLVM version has been specified with LLVM_VERSION, aborting")
+    message(FATAL_ERROR "No supported LLVM version has been specified with LLVM_VERSION (LLVM_VERSION=${LLVM_VERSION}), aborting")
   endif()
 
   set(LLVM_BUILD_TARGETS LLVMAggressiveInstCombine

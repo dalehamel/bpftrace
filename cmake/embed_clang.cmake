@@ -10,13 +10,6 @@ if(EMBED_CLANG)
     set(EMBEDDED_BUILD_TYPE ${CMAKE_BUILD_TYPE})
   endif()
 
-  if(NOT EMBED_LLVM)
-    # see docs/embeded_builds for why
-# Could *maybe* be used to link to system LLVM?
-# https://github.com/llvm/llvm-project/releases/download/llvmorg-8.0.1/polly-8.0.1.src.tar.xz
-    message(FATAL_ERROR "Embedding clang is currently only supported with embedded LLVM")
-  endif()
-
   if(${LLVM_VERSION} VERSION_EQUAL "9" OR ${LLVM_VERSION} VERSION_GREATER "9" )
     set(LLVM_FULL_VERSION "9.0.1")
     set(CLANG_DOWNLOAD_URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_FULL_VERSION}/clang-${LLVM_FULL_VERSION}.src.tar.xz")
@@ -31,7 +24,17 @@ if(EMBED_CLANG)
     set(CLANG_DOWNLOAD_URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_FULL_VERSION}/cfe-${LLVM_FULL_VERSION}.src.tar.xz")
     set(CLANG_URL_CHECKSUM "SHA256=e97dc472aae52197a4d5e0185eb8f9e04d7575d2dc2b12194ddc768e0f8a846d")
   else()
-    message(FATAL_ERROR "No supported LLVM version has been specified with LLVM_VERSION, aborting")
+    message(FATAL_ERROR "No supported LLVM version has been specified with LLVM_VERSION (LLVM_VERSION=${LLVM_VERSION}), aborting")
+  endif()
+
+  set(CLANG_PATCH_COMMAND "/bin/true")
+  if(NOT EMBED_LLVM)
+    # see docs/embeded_builds for why
+# Could *maybe* be used to link to system LLVM?
+# https://github.com/llvm/llvm-project/releases/download/llvmorg-8.0.1/polly-8.0.1.src.tar.xz
+    include(bpftrace_util)
+    prepare_clang_patches()
+    #message(FATAL_ERROR "Embedding clang is currently only supported with embedded LLVM")
   endif()
 
   set(CLANG_BUILD_TARGETS clang
@@ -81,6 +84,7 @@ if(EMBED_CLANG)
     URL "${CLANG_DOWNLOAD_URL}"
     URL_HASH "${CLANG_URL_CHECKSUM}"
     CMAKE_ARGS "${CLANG_CONFIGURE_FLAGS}"
+    PATCH_COMMAND /bin/sh -c "${CLANG_PATCH_COMMAND}"
     INSTALL_COMMAND make install
     COMMAND cp <BINARY_DIR>/lib/libclang.a <INSTALL_DIR>/lib/libclang.a
     BUILD_BYPRODUCTS ${CLANG_TARGET_LIBS}
