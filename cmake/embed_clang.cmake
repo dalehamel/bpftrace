@@ -31,7 +31,7 @@ if(EMBED_CLANG)
     # If not linking and building against embedded LLVM, patches may need to
     # be applied to work with the distribution LLVM. This is handled by a
     # helper function
-    include(embed_helpers)
+    include(local_helpers)
     prepare_clang_patches(CLANG_PATCH_COMMAND)
   endif()
 

@@ -1,17 +1,25 @@
 # Detect the distribution bpftrace is being built on
-function(detect_os)
+function(detect_os os_id)
   file(STRINGS "/etc/os-release" HOST_OS_INFO)
-
   foreach(os_info IN LISTS HOST_OS_INFO)
     if(os_info MATCHES "^ID=")
       string(REPLACE "ID=" "" HOST_OS_ID ${os_info})
-      set(HOST_OS_ID ${HOST_OS_ID} PARENT_SCOPE)
-    elseif(os_info MATCHES "^ID_LIKE=")
-      string(REPLACE "ID_LIKE=" "" HOST_OS_ID_LIKE ${os_info})
-      set(HOST_OS_ID_LIKE ${HOST_OS_ID_LIKE} PARENT_SCOPE)
+      set(${os_id} ${HOST_OS_ID} PARENT_SCOPE)
+      break()
     endif()
   endforeach(os_info)
-endfunction(detect_os)
+endfunction(detect_os os_id)
+
+function(detect_os_family family_id)
+  file(STRINGS "/etc/os-release" HOST_OS_INFO)
+  foreach(os_info IN LISTS HOST_OS_INFO)
+    if(os_info MATCHES "^ID_LIKE=")
+      string(REPLACE "ID_LIKE=" "" HOST_OS_ID_LIKE ${os_info})
+      set(${family_id} ${HOST_OS_ID_LIKE} PARENT_SCOPE)
+      break()
+    endif()
+  endforeach(os_info)
+endfunction(detect_os_family family_id)
 
 function(get_host_triple out)
   # Get the architecture.
@@ -68,12 +76,18 @@ function(fetch_patches patchName patchPath patchURL patchChecksum)
   endif()
 endfunction(fetch_patches patchName patchPatch patchURL patchChecksum)
 
+function(fix_llvm_linkflags targetProperty propertyValue)
+  set_target_properties(${target_property} PROPERTIES
+      INTERFACE_LINK_LIBRARIES "${propertyValue}"
+    )
+endfunction(fix_llvm_linkflags targetProperty propertyValue)
+
 function(prepare_clang_patches patch_command)
   message("Building embedded Clang against host LLVM, checking compatibiilty...")
-  detect_os()
-  message("HOST ID ${HOST_OS_ID}")
-
   set(CLANG_PATCH_COMMAND "/bin/true")
+  detect_os(HOST_OS_ID)
+  detect_os(HOST_OS_ID_LIKE)
+
   if(HOST_OS_ID STREQUAL "debian" OR HOST_OS_ID STREQUAL "ubuntu" OR HOST_OS_ID_LIKE STREQUAL "debian")
     message("Building on a debian-like system, will apply minimal debian patches to clang sources in order to build.")
     set(PATCH_NAME "debian-patches.tar.gz")
@@ -98,19 +112,14 @@ function(prepare_clang_patches patch_command)
     # These targets are from LLVMExports.cmake, so may vary by distribution.
     # in order to avoid fighting with what the LLVM package wants the linker to
     # do, it is easiest to just override the target link properties
-
     # These libraries are missing from the linker line command line
     # in the upstream package
     # Adding extra libraries here shouldn't affect the result, as they will be
     # ignored by the linker if not needed
-    set_target_properties(LLVMSupport PROPERTIES
-      INTERFACE_LINK_LIBRARIES "LLVMCoroutines;LLVMCoverage;LLVMDebugInfoDWARF;LLVMDebugInfoPDB;LLVMDemangle;LLVMDlltoolDriver;LLVMFuzzMutate;LLVMInterpreter;LLVMLibDriver;LLVMLineEditor;LLVMLTO;LLVMMCA;LLVMMIRParser;LLVMObjCARCOpts;LLVMObjectYAML;LLVMOption;LLVMOptRemarks;LLVMPasses;LLVMPerfJITEvents;LLVMSymbolize;LLVMTableGen;LLVMTextAPI;LLVMWindowsManifest;LLVMXRay;-Wl,-Bstatic -ltinfo;"
-    )
+    fix_llvm_linkflags(LLVMSupport "LLVMCoroutines;LLVMCoverage;LLVMDebugInfoDWARF;LLVMDebugInfoPDB;LLVMDemangle;LLVMDlltoolDriver;LLVMFuzzMutate;LLVMInterpreter;LLVMLibDriver;LLVMLineEditor;LLVMLTO;LLVMMCA;LLVMMIRParser;LLVMObjCARCOpts;LLVMObjectYAML;LLVMOption;LLVMOptRemarks;LLVMPasses;LLVMPerfJITEvents;LLVMSymbolize;LLVMTableGen;LLVMTextAPI;LLVMWindowsManifest;LLVMXRay;-Wl,-Bstatic -ltinfo;")
 
     # Need to omit lpthread here or it will try and link statically, and fail
-    set_target_properties(LLVMCodeGen PROPERTIES
-      INTERFACE_LINK_LIBRARIES "LLVMAnalysis;LLVMBitReader;LLVMBitWriter;LLVMCore;LLVMMC;LLVMProfileData;LLVMScalarOpts;LLVMSupport;LLVMTarget;LLVMTransformUtils"
-    )
+    fix_llvm_linkflags(LLVMCodeGen "LLVMAnalysis;LLVMBitReader;LLVMBitWriter;LLVMCore;LLVMMC;LLVMProfileData;LLVMScalarOpts;LLVMSupport;LLVMTarget;LLVMTransformUtils")
 
     set(CLANG_PATCH_COMMAND "(QUILT_PATCHES=${PATCH_PATH} quilt push -a || [[ $? -eq 2 ]])")
   endif()

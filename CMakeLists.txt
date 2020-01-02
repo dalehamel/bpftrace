@@ -13,6 +13,7 @@ set(EMBED_LLVM OFF CACHE BOOL "Build LLVM static libs as an ExternalProject and 
 set(EMBED_CLANG OFF CACHE BOOL "Build Clang static libs as an ExternalProject and link to these instead of system libs.")
 set(EMBED_LIBCLANG_ONLY OFF CACHE BOOL "Build only libclang.a, and link to system libraries statically")
 set(LLVM_VERSION "8" CACHE STRING "Embedded LLVM/Clang version to build and link against.")
+set(BUILD_ASAN OFF CACHE BOOL "Build bpftrace with -fsanitize=address")
 
 if(EMBED_LLVM OR EMBED_CLANG)
   if (NOT STATIC_LINKING)
@@ -29,7 +30,7 @@ if(EMBED_LIBCLANG_ONLY AND NOT EMBED_CLANG)
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-set(BUILD_ASAN OFF CACHE BOOL "Build bpftrace with -fsanitize=address")
+include(local_helpers)
 
 set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -59,8 +60,7 @@ include(CTest)
 if (STATIC_LINKING)
   if(STATIC_LIBC)
     set(CMAKE_EXE_LINKER_FLAGS "-static")
-
-  elseif(EMBED_LLVM OR EMBED_CLANG)
+  else()
     set(EMBEDDED_LINK_FLAGS "-static-libgcc -static-libstdc++ -Wl,--start-group")
     set(EMBEDDED_LINK_FLAGS "${EMBEDDED_LINK_FLAGS} -Wl,-Bdynamic -lrt")
     set(EMBEDDED_LINK_FLAGS "${EMBEDDED_LINK_FLAGS} -Wl,-Bdynamic -lpthread")
