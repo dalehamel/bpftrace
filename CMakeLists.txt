@@ -143,6 +143,13 @@ else()
 
   include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
   add_definitions(${LLVM_DEFINITIONS})
+
+  detect_os(HOST_OS)
+  if(STATIC_LINKING AND HOST_OS STREQUAL "alpine" AND NOT STATIC_LIBC)
+    set_target_properties(LLVM PROPERTIES
+      IMPORTED_LOCATION_MINSIZEREL "/lib/libc.musl-x86_64.so.1" # a dirty hack to trick linker since I can't find where LLVM-8.so is being added
+    )
+  endif()
 endif()
 
 if(EMBED_CLANG)

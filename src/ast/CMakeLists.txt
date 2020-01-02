@@ -61,6 +61,33 @@ if (STATIC_LINKING)
     llvm_map_components_to_libnames(llvm_libs bpfcodegen ipo irreader mcjit orcjit ${LLVM_TARGETS_TO_BUILD})
     target_link_libraries(ast ${clang_libs})
     target_link_libraries(ast ${llvm_libs})
+
+    if(HOST_OS STREQUAL "alpine")
+      set(llvm_extra_libs
+        LLVMCoroutines
+        LLVMCoverage
+        LLVMDebugInfoDWARF
+        LLVMDebugInfoPDB
+        LLVMDlltoolDriver
+        LLVMFuzzMutate
+        LLVMInterpreter
+        LLVMLibDriver
+        LLVMLineEditor
+        LLVMLTO
+        LLVMMCA
+        LLVMMIRParser
+        LLVMObjCARCOpts
+        LLVMObjectYAML
+        LLVMOption
+        LLVMOptRemarks
+        LLVMPasses
+        LLVMSymbolize
+        LLVMTableGen
+        LLVMTextAPI
+        LLVMWindowsManifest
+        LLVMXRay)
+      target_link_libraries(ast ${llvm_extra_libs})
+    endif()
   endif()
 else()
   find_library(found_LLVM LLVM HINTS ${LLVM_LIBRARY_DIRS})
