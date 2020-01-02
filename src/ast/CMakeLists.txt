@@ -42,14 +42,16 @@ if (STATIC_LINKING)
   if(EMBED_CLANG)
     target_link_libraries(ast ${CLANG_EMBEDDED_CMAKE_TARGETS})
     list(APPEND clang_libs clangToolingInclusions)
-    if(EMBED_LIBCLANG_ONLY)
-      foreach(clang_lib IN LISTS clang_libs)
-        set_target_properties(${clang_lib} PROPERTIES
-          INTERFACE_LINK_LIBRARIES ""
-        )
-      endforeach(clang_lib)
-    endif()
-  else()
+  endif()
+
+  detect_os(HOST_OS)
+  if(EMBED_LIBCLANG_ONLY OR HOST_OS STREQUAL "alpine")
+    foreach(clang_lib IN LISTS clang_libs)
+      get_target_property(link_libraries ${clang_lib} INTERFACE_LINK_LIBRARIES)
+      string(REPLACE "LLVM" "" static_only_libs "${link_libraries}")
+      message("Static only libs ${static_only_libs}")
+      fix_llvm_linkflags(${clang_lib} "${static_only_libs}")
+    endforeach(clang_lib)
     list(APPEND clang_libs libclang.a)
   endif()
 
@@ -59,6 +61,33 @@ if (STATIC_LINKING)
     llvm_map_components_to_libnames(llvm_libs bpfcodegen ipo irreader mcjit orcjit ${LLVM_TARGETS_TO_BUILD})
     target_link_libraries(ast ${clang_libs})
     target_link_libraries(ast ${llvm_libs})
+
+    if(HOST_OS STREQUAL "alpine")
+      set(llvm_extra_libs
+        LLVMCoroutines
+        LLVMCoverage
+        LLVMDebugInfoDWARF
+        LLVMDebugInfoPDB
+        LLVMDlltoolDriver
+        LLVMFuzzMutate
+        LLVMInterpreter
+        LLVMLibDriver
+        LLVMLineEditor
+        LLVMLTO
+        LLVMMCA
+        LLVMMIRParser
+        LLVMObjCARCOpts
+        LLVMObjectYAML
+        LLVMOption
+        LLVMOptRemarks
+        LLVMPasses
+        LLVMSymbolize
+        LLVMTableGen
+        LLVMTextAPI
+        LLVMWindowsManifest
+        LLVMXRay)
+      target_link_libraries(ast ${llvm_extra_libs})
+    endif()
   endif()
 else()
   find_library(found_LLVM LLVM HINTS ${LLVM_LIBRARY_DIRS})

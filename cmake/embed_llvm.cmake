@@ -1,6 +1,6 @@
 if(EMBED_LLVM)
   include(ExternalProject)
-  include(embed_helpers)
+  include(local_helpers)
 
   # TO DO
   # Set up cross-compilation
