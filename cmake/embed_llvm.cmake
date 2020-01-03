@@ -1,10 +1,12 @@
 if(EMBED_LLVM)
   include(ExternalProject)
   include(embed_helpers)
+  include(ProcessorCount)
 
   # TO DO
   # Set up cross-compilation
   # https://cmake.org/cmake/help/v3.6/manual/cmake-toolchains.7.html#cross-compiling-using-clang
+  ProcessorCount(nproc)
   get_host_triple(CHOST)
   get_target_triple(CBUILD)
 
@@ -42,67 +44,70 @@ if(EMBED_LLVM)
   endif()
 
   # Default to building almost all targets, + BPF specific ones
-  set(LLVM_BUILD_TARGETS LLVMAggressiveInstCombine
-                         LLVMAnalysis
-                         LLVMAsmParser
-                         LLVMAsmPrinter
-                         LLVMBinaryFormat
-                         LLVMBitReader
-                         LLVMBitWriter
-                         LLVMBPFAsmParser
-                         LLVMBPFAsmPrinter
-                         LLVMBPFCodeGen
-                         LLVMBPFDesc
-                         LLVMBPFDisassembler
-                         LLVMBPFInfo
-                         LLVMCodeGen
-                         LLVMCore
-                         LLVMCoroutines
-                         LLVMCoverage
-                         LLVMDebugInfoCodeView
-                         LLVMDebugInfoDWARF
-                         LLVMDebugInfoMSF
-                         LLVMDebugInfoPDB
-                         LLVMDemangle
-                         LLVMDlltoolDriver
-                         LLVMExecutionEngine
-                         LLVMFuzzMutate
-                         LLVMGlobalISel
-                         LLVMInstCombine
-                         LLVMInstrumentation
-                         LLVMInterpreter
-                         LLVMipo
-                         LLVMIRReader
-                         LLVMLibDriver
-                         LLVMLineEditor
-                         LLVMLinker
-                         LLVMLTO
-                         LLVMMC
-                         LLVMMCA
-                         LLVMMCDisassembler
-                         LLVMMCJIT
-                         LLVMMCParser
-                         LLVMMIRParser
-                         LLVMObjCARCOpts
-                         LLVMObject
-                         LLVMObjectYAML
-                         LLVMOption
-                         LLVMOptRemarks
-                         LLVMOrcJIT
-                         LLVMPasses
-                         LLVMProfileData
-                         LLVMRuntimeDyld
-                         LLVMScalarOpts
-                         LLVMSelectionDAG
-                         LLVMSymbolize
-                         LLVMTableGen
-                         LLVMTarget
-                         LLVMTextAPI
-                         LLVMTransformUtils
-                         LLVMVectorize
-                         LLVMWindowsManifest
-                         LLVMXRay
-                         LLVMSupport)
+  # This builds almost everything, some may be unecessary but want to avoid linker hell.
+  # Need to exclude LLVMHello on android, but it seems like just a dummy lib
+  set(LLVM_LIBRARY_TARGETS LLVMDemangle
+                           LLVMTableGen
+                           LLVMCore
+                           LLVMFuzzMutate
+                           LLVMIRReader
+                           LLVMCodeGen
+                           LLVMSelectionDAG
+                           LLVMAsmPrinter
+                           LLVMMIRParser
+                           LLVMGlobalISel
+                           LLVMBinaryFormat
+                           LLVMBitReader
+                           LLVMBitWriter
+                           LLVMTransformUtils
+                           LLVMInstrumentation
+                           LLVMAggressiveInstCombine
+                           LLVMInstCombine
+                           LLVMScalarOpts
+                           LLVMipo
+                           LLVMVectorize
+                           LLVMObjCARCOpts
+                           LLVMCoroutines
+                           LLVMLinker
+                           LLVMAnalysis
+                           LLVMLTO
+                           LLVMMC
+                           LLVMMCParser
+                           LLVMMCDisassembler
+                           LLVMMCA
+                           LLVMObject
+                           LLVMObjectYAML
+                           LLVMOption
+                           LLVMOptRemarks
+                           LLVMDebugInfoDWARF
+                           LLVMDebugInfoMSF
+                           LLVMDebugInfoCodeView
+                           LLVMDebugInfoPDB
+                           LLVMSymbolize
+                           LLVMExecutionEngine
+                           LLVMInterpreter
+                           LLVMMCJIT
+                           LLVMOrcJIT
+                           LLVMRuntimeDyld
+                           LLVMTarget
+                           LLVMBPFCodeGen
+                           LLVMBPFAsmParser
+                           LLVMBPFDisassembler
+                           LLVMBPFAsmPrinter
+                           LLVMBPFDesc
+                           LLVMBPFInfo
+                           LLVMAsmParser
+                           LLVMLineEditor
+                           LLVMProfileData
+                           LLVMCoverage
+                           LLVMPasses
+                           LLVMTextAPI
+                           LLVMDlltoolDriver
+                           LLVMLibDriver
+                           LLVMXRay
+                           LLVMTestingSupport
+                           LLVMWindowsManifest
+                           LLVMSupport)
 
   # These build flags are based off of Alpine, Debian and Gentoo packages
   # optimized for compatibility and reducing build targets
@@ -113,9 +118,15 @@ if(EMBED_LLVM)
                              -DLLVM_BINUTILS_INCDIR=/usr/include
                              -DLLVM_BUILD_DOCS=OFF
                              -DLLVM_BUILD_EXAMPLES=OFF
+                             -DLLVM_INCLUDE_EXAMPLES=OFF
                              -DLLVM_BUILD_EXTERNAL_COMPILER_RT=ON
                              -DLLVM_BUILD_LLVM_DYLIB=ON
+                             -DLLVM_LINK_LLVM_DYLIB=OFF
                              -DLLVM_BUILD_TESTS=OFF
+                             -DLLVM_INCLUDE_TESTS=OFF
+                             -DLLVM_BUILD_TOOLS=OFF
+                             -DLLVM_INCLUDE_TOOLS=OFF
+                             -DLLVM_INCLUDE_BENCHMARKS=OFF
                              -DLLVM_DEFAULT_TARGET_TRIPLE=${CBUILD}
                              -DLLVM_ENABLE_ASSERTIONS=OFF
                              -DLLVM_ENABLE_CXX1Y=ON
@@ -130,24 +141,67 @@ if(EMBED_LLVM)
                              -DLLVM_ENABLE_TERMINFO=OFF
                              -DLLVM_ENABLE_ZLIB=ON
                              -DLLVM_HOST_TRIPLE=${CHOST}
-                             -DLLVM_INCLUDE_EXAMPLES=OFF
-                             -DLLVM_LINK_LLVM_DYLIB=ON
                              -DLLVM_APPEND_VC_REV=OFF
                              )
 
+  if(${TARGET_TRIPLE} MATCHES android)
+    # FIXME hardcoded
+    #find_program(LLVM_CONFIG_PATH llvm-config-8) # FIXME add version suffix
+    #find_program(LLVM_TBLGEN_PATH llvm-tblgen-8)
+
+    message("API LEVEL ${ANDROID_NATIVE_API_LEVEL}")
+    list(APPEND LLVM_CONFIGURE_FLAGS -DCMAKE_TOOLCHAIN_FILE=/opt/android-ndk/build/cmake/android.toolchain.cmake)
+    list(APPEND LLVM_CONFIGURE_FLAGS -DANDROID_ABI=${ANDROID_ABI})
+    list(APPEND LLVM_CONFIGURE_FLAGS -DANDROID_NATIVE_API_LEVEL=${ANDROID_NATIVE_API_LEVEL})
+    # list(APPEND LLVM_CONFIGURE_FLAGS -DLLVM_CONFIG_PATH=${LLVM_CONFIG_PATH}) # not needed for LLVm
+    #list(APPEND LLVM_CONFIGURE_FLAGS -DLLVM_TABLEGEN=${LLVM_TBLGEN_PATH})
+    #list(APPEND LLVM_CONFIGURE_FLAGS -DBUILD_SHARED_LIBS=ON)
+    #-DCLANG_TABLEGEN=$(abspath $(HOST_OUT_DIR)/bin/clang-tblgen) \
+    string(REPLACE ";" " " LLVM_MAKE_TARGETS "${LLVM_LIBRARY_TARGETS}" )
+    set(BUILD_COMMAND "make -j${nproc} ${LLVM_MAKE_TARGETS} ") # nproc?
+    message("USING BUILD COMMAND ${BUILD_COMMAND}")
+    set(INSTALL_COMMAND "mkdir -p <INSTALL_DIR>/lib/ <INSTALL_DIR>/bin/ && find <BINARY_DIR>/lib/ | grep '\\.a$' | xargs -I@ cp @ <INSTALL_DIR>/lib/ && make install-cmake-exports && make install-llvm-headers && cp <BINARY_DIR>/NATIVE/bin/llvm-tblgen <INSTALL_DIR>/bin/ ")
+  endif()
+
+  if(${TARGET_TRIPLE} MATCHES android) # FIXME do NOT EQUAL host triple instead
+    ExternalProject_Add(embedded_llvm_host
+      URL "${LLVM_DOWNLOAD_URL}"
+      URL_HASH "${LLVM_URL_CHECKSUM}"
+      CONFIGURE_COMMAND /bin/bash -xc "cmake <SOURCE_DIR>"
+      BUILD_COMMAND /bin/bash -c "make -j ${nproc} llvm-config llvm-tblgen"
+      INSTALL_COMMAND /bin/bash -c "mkdir -p <INSTALL_DIR>/bin && cp <BINARY_DIR>/bin/llvm-tblgen <INSTALL_DIR>/bin && cp <BINARY_DIR>/bin/llvm-config <INSTALL_DIR>/bin"
+      UPDATE_DISCONNECTED 1
+      DOWNLOAD_NO_PROGRESS 1
+    )
+
+    ExternalProject_Get_Property(embedded_llvm_host INSTALL_DIR)
+    set(LLVM_TBLGEN_PATH "${INSTALL_DIR}/bin/llvm-tblgen")
+    set(LLVM_CONFIG_PATH "${INSTALL_DIR}/bin/llvm-config")
+  endif()
+
+
   set(LLVM_TARGET_LIBS "")
-  foreach(llvm_target IN LISTS LLVM_BUILD_TARGETS)
+  foreach(llvm_target IN LISTS LLVM_LIBRARY_TARGETS)
     list(APPEND LLVM_TARGET_LIBS "<INSTALL_DIR>/lib/lib${llvm_target}.a")
   endforeach(llvm_target)
 
+  string(REPLACE ";" " " LLVM_CONFIG_FLAGS "${LLVM_CONFIGURE_FLAGS}" )
+  set(LLVM_CONFIG_FLAGS "${LLVM_CONFIG_FLAGS}")
+  message("LLVM CONF ${LLVM_CONFIG_FLAGS}")
   ExternalProject_Add(embedded_llvm
     URL "${LLVM_DOWNLOAD_URL}"
     URL_HASH "${LLVM_URL_CHECKSUM}"
-    CMAKE_ARGS "${LLVM_CONFIGURE_FLAGS}"
+    CONFIGURE_COMMAND /bin/bash -xc "cmake ${LLVM_CONFIG_FLAGS} <SOURCE_DIR>"
+    BUILD_COMMAND /bin/bash -c "${BUILD_COMMAND}"
     BUILD_BYPRODUCTS ${LLVM_TARGET_LIBS}
+    INSTALL_COMMAND /bin/bash -c "${INSTALL_COMMAND}" # Also install NATIVE tblgen
     UPDATE_DISCONNECTED 1
     DOWNLOAD_NO_PROGRESS 1
   )
+
+  if(${TARGET_TRIPLE} MATCHES android) # FIXME do NOT EQUAL host triple instead
+    ExternalProject_Add_StepDependencies(embedded_llvm install embedded_llvm_host)
+  endif()
 
   ExternalProject_Get_Property(embedded_llvm INSTALL_DIR)
   set(EMBEDDED_LLVM_INSTALL_DIR ${INSTALL_DIR})
@@ -155,7 +209,7 @@ if(EMBED_LLVM)
 
   include_directories(SYSTEM ${EMBEDDED_LLVM_INSTALL_DIR}/include)
 
-  foreach(llvm_target IN LISTS LLVM_BUILD_TARGETS)
+  foreach(llvm_target IN LISTS LLVM_LIBRARY_TARGETS)
     list(APPEND LLVM_EMBEDDED_CMAKE_TARGETS ${llvm_target})
     add_library(${llvm_target} STATIC IMPORTED)
     set_property(TARGET ${llvm_target} PROPERTY IMPORTED_LOCATION ${EMBEDDED_LLVM_INSTALL_DIR}/lib/lib${llvm_target}.a)

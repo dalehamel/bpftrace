@@ -43,7 +43,7 @@ if(EMBED_CLANG)
   set(CLANG_INSTALL_COMMAND "make install && ${LIBCLANG_INSTALL_COMMAND}")
 
   if(EMBED_LIBCLANG_ONLY)
-    set(CLANG_BUILD_TARGETS clang)
+    set(CLANG_LIBRARY_TARGETS clang)
     # Include system clang here to deal with the rest of the targets
 
     set(CLANG_BUILD_COMMAND "make libclang_static -j${nproc}")
@@ -52,7 +52,7 @@ if(EMBED_CLANG)
     find_package(Clang REQUIRED)
     include_directories(SYSTEM ${CLANG_INCLUDE_DIRS})
   else()
-    set(CLANG_BUILD_TARGETS clang
+    set(CLANG_LIBRARY_TARGETS clang
                             clangAST
                             clangAnalysis
                             clangBasic
@@ -72,10 +72,6 @@ if(EMBED_CLANG)
   endif()
 
 
-  set(CLANG_TARGET_LIBS "")
-  foreach(clang_target IN LISTS CLANG_BUILD_TARGETS)
-    list(APPEND CLANG_TARGET_LIBS "<INSTALL_DIR>/lib/lib${clang_target}.a")
-  endforeach(clang_target)
 
   # These configure flags are a blending of the Alpine, debian, and gentoo
   # packages configure flags, customized to reduce build targets as much as
@@ -97,13 +93,58 @@ if(EMBED_CLANG)
                              )
 
   if(EMBED_LLVM)
-    list(APPEND CLANG_CONFIGURE_FLAGS  -DCMAKE_PREFIX_PATH=${EMBEDDED_LLVM_INSTALL_DIR}/lib/cmake/llvm)
+    list(APPEND CLANG_CONFIGURE_FLAGS  -DLLVM_DIR=${EMBEDDED_LLVM_INSTALL_DIR}/lib/cmake/llvm)
   endif()
 
+  if(${TARGET_TRIPLE} MATCHES android)
+    # FIXME hardcoded
+    #find_program(LLVM_CONFIG_PATH llvm-config-8) # FIXME add version suffix
+    #find_program(LLVM_TBLGEN_PATH llvm-tblgen-8)
+
+    list(APPEND CLANG_CONFIGURE_FLAGS -DCMAKE_TOOLCHAIN_FILE=/opt/android-ndk/build/cmake/android.toolchain.cmake)
+    list(APPEND CLANG_CONFIGURE_FLAGS -DANDROID_ABI=${ANDROID_ABI})
+    list(APPEND CLANG_CONFIGURE_FLAGS -DANDROID_NATIVE_API_LEVEL=${ANDROID_NATIVE_API_LEVEL})
+    list(APPEND CLANG_CONFIGURE_FLAGS -DLLVM_CONFIG_PATH=${LLVM_CONFIG_PATH})
+    list(APPEND CLANG_CONFIGURE_FLAGS -DLLVM_TABLEGEN=${LLVM_TBLGEN_PATH})
+    list(APPEND CLANG_CONFIGURE_FLAGS -DLLVM_TABLEGEN_EXE=${LLVM_TBLGEN_PATH})
+    list(APPEND CLANG_CONFIGURE_FLAGS -DCMAKE_CROSSCOMPILING=True)
+    #list(APPEND LLVM_CONFIGURE_FLAGS -DBUILD_SHARED_LIBS=ON)
+    string(REPLACE ";" " " CLANG_MAKE_TARGETS "${CLANG_LIBRARY_TARGETS}" )
+    set(BUILD_COMMAND "make -j${nproc} ${CLANG_MAKE_TARGETS}") # nproc?
+    message("USING BUILD COMMAND ${BUILD_COMMAND}")
+    set(INSTALL_COMMAND "mkdir -p <INSTALL_DIR>/lib/ && find <BINARY_DIR>/lib/ | grep '\\.a$' | xargs -I@ cp @ <INSTALL_DIR>/lib/")
+  endif()
+
+  if(${TARGET_TRIPLE} MATCHES android) # FIXME do NOT EQUAL host triple instead
+    ExternalProject_Add(embedded_clang_host
+      URL "${CLANG_DOWNLOAD_URL}"
+      URL_HASH "${CLANG_URL_CHECKSUM}"
+      CONFIGURE_COMMAND /bin/bash -xc "cmake <SOURCE_DIR>"
+      BUILD_COMMAND /bin/bash -c "make -j${nproc} clang-tblgen"
+      INSTALL_COMMAND /bin/bash -c "mkdir -p <INSTALL_DIR>/bin && cp <BINARY_DIR>/bin/clang-tblgen <INSTALL_DIR>/bin"
+      UPDATE_DISCONNECTED 1
+      DOWNLOAD_NO_PROGRESS 1
+    )
+
+    ExternalProject_Get_Property(embedded_clang_host INSTALL_DIR)
+    set(CLANG_TBLGEN_PATH "${INSTALL_DIR}/bin/clang-tblgen")
+
+    list(APPEND CLANG_CONFIGURE_FLAGS -DCLANG_TABLEGEN=${CLANG_TBLGEN_PATH})
+  endif()
+
+  set(CLANG_TARGET_LIBS "")
+  foreach(clang_target IN LISTS CLANG_LIBRARY_TARGETS)
+    list(APPEND CLANG_TARGET_LIBS "<INSTALL_DIR>/lib/lib${clang_target}.a")
+  endforeach(clang_target)
+
+
+  # CRASHING - might need to referenc the llvm-config/tblgen that's embedded?
+  string(REPLACE ";" " " CLANG_CONFIG_FLAGS "${CLANG_CONFIGURE_FLAGS}" )
+  message("USING CONFIG FLAGS ${CLANG_CONFIG_FLAGS}")
   ExternalProject_Add(embedded_clang
     URL "${CLANG_DOWNLOAD_URL}"
     URL_HASH "${CLANG_URL_CHECKSUM}"
-    CMAKE_ARGS "${CLANG_CONFIGURE_FLAGS}"
+    CONFIGURE_COMMAND /bin/bash -xc "cmake ${CLANG_CONFIG_FLAGS} <SOURCE_DIR>"
     PATCH_COMMAND /bin/bash -c "${CLANG_PATCH_COMMAND}"
     BUILD_COMMAND /bin/bash -c "${CLANG_BUILD_COMMAND}"
     INSTALL_COMMAND /bin/bash -c "${CLANG_INSTALL_COMMAND}"
@@ -116,13 +157,17 @@ if(EMBED_CLANG)
     ExternalProject_Add_StepDependencies(embedded_clang install embedded_llvm)
   endif()
 
+  if(${TARGET_TRIPLE} MATCHES android) # FIXME do NOT EQUAL host triple instead
+    ExternalProject_Add_StepDependencies(embedded_clang install embedded_clang_host)
+  endif()
+
   ExternalProject_Get_Property(embedded_clang INSTALL_DIR)
   set(EMBEDDED_CLANG_INSTALL_DIR ${INSTALL_DIR})
   set(CLANG_EMBEDDED_CMAKE_TARGETS "")
 
   include_directories(SYSTEM ${EMBEDDED_CLANG_INSTALL_DIR}/include)
 
-  foreach(clang_target IN LISTS CLANG_BUILD_TARGETS)
+  foreach(clang_target IN LISTS CLANG_LIBRARY_TARGETS)
 
     if(${clang_target} STREQUAL "clang")
       set(clang_target "embedded-libclang")
