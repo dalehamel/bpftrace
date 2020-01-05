@@ -44,13 +44,13 @@ if (STATIC_LINKING)
     list(APPEND clang_libs clangToolingInclusions)
     if(EMBED_LIBCLANG_ONLY)
       foreach(clang_lib IN LISTS clang_libs)
-        set_target_properties(${clang_lib} PROPERTIES
-          INTERFACE_LINK_LIBRARIES ""
-        )
+        get_target_property(link_libraries ${clang_lib} INTERFACE_LINK_LIBRARIES)
+        string(REPLACE "LLVM" "" static_only_libs "${link_libraries}")
+        fix_llvm_linkflags(${clang_lib} "${static_only_libs}")
       endforeach(clang_lib)
     endif()
   else()
-    list(APPEND clang_libs libclang.a)
+    list(INSERT clang_libs 0 libclang.a)
   endif()
 
   if(EMBED_LLVM)
