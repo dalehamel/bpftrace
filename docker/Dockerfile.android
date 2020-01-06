@@ -5,10 +5,6 @@ ARG ANDROID_NDK_VERSION=r21-beta2
 #ARG ANDROID_NDK_VERSION=r20
 ENV ANDROID_NDK_VERSION=$ANDROID_NDK_VERSION
 
-# Needed to build host clang-tblgen
-ARG LLVM_VERSION=8
-ENV LLVM_VERSION=$LLVM_VERSION
-
 # ------------------------------------------------------
 # --- Install required tools
 
@@ -17,7 +13,6 @@ RUN apt-get update && apt-get install -y \
       cmake \
       unzip \
       libz-dev \
-      llvm-${LLVM_VERSION} \
       python3 \
       wget
 

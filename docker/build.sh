@@ -48,11 +48,16 @@ with_timeout()
 # Build bpftrace
 mkdir -p "$1"
 cd "$1"
+# FIXME don't hardcode
 cmake -DCMAKE_BUILD_TYPE="$2" -DWARNINGS_AS_ERRORS:BOOL=$WARNINGS_AS_ERRORS \
       -DSTATIC_LINKING:BOOL=$STATIC_LINKING -DSTATIC_LIBC:BOOL=$STATIC_LIBC \
       -DEMBED_LLVM:BOOL=$EMBED_LLVM -DEMBED_CLANG:BOOL=$EMBED_CLANG \
       -DEMBED_LIBCLANG_ONLY:BOOL=$EMBED_LIBCLANG_ONLY \
+      -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+      -DANDROID_ABI=armeabi-v7a \
+      -DANDROID_NATIVE_API_LEVEL=28 \
       -DLLVM_VERSION=$LLVM_VERSION  ../
+
 shift 2
 
 # It is necessary to build embedded llvm and clang targets first,
