@@ -35,6 +35,8 @@ else()
   message(FATAL_ERROR "No supported LLVM version has been specified with LLVM_VERSION (LLVM_VERSION=${LLVM_VERSION}), aborting")
 endif()
 
+set(LLVM_INSTALL_COMMAND "make install") # FIXME work with ninja / detect generator?
+
 # Default to building almost all targets, + BPF specific ones
 set(LLVM_LIBRARY_TARGETS
     LLVMAggressiveInstCombine
@@ -130,19 +132,48 @@ set(LLVM_CONFIGURE_FLAGS   -Wno-dev
                            -DLLVM_LINK_LLVM_DYLIB=ON
                            -DLLVM_APPEND_VC_REV=OFF
                            )
+
+if(${TARGET_TRIPLE} MATCHES android)
+  list(APPEND LLVM_CONFIGURE_FLAGS -DCMAKE_TOOLCHAIN_FILE=/opt/android-ndk/build/cmake/android.toolchain.cmake)
+  list(APPEND LLVM_CONFIGURE_FLAGS -DANDROID_ABI=${ANDROID_ABI})
+  list(APPEND LLVM_CONFIGURE_FLAGS -DANDROID_NATIVE_API_LEVEL=${ANDROID_NATIVE_API_LEVEL})
+  # list(APPEND LLVM_CONFIGURE_FLAGS -DLLVM_CONFIG_PATH=${LLVM_CONFIG_PATH}) # not needed for LLVm
+  #list(APPEND LLVM_CONFIGURE_FLAGS -DLLVM_TABLEGEN=${LLVM_TBLGEN_PATH})
+  #list(APPEND LLVM_CONFIGURE_FLAGS -DBUILD_SHARED_LIBS=ON)
+  #-DCLANG_TABLEGEN=$(abspath $(HOST_OUT_DIR)/bin/clang-tblgen) \
+  string(REPLACE ";" " " LLVM_MAKE_TARGETS "${LLVM_LIBRARY_TARGETS}" )
+  set(LLVM_BUILD_COMMAND "make -j${nproc} ${LLVM_MAKE_TARGETS} ") # nproc?
+  message("USING BUILD COMMAND ${BUILD_COMMAND}")
+  set(LLVM_INSTALL_COMMAND "mkdir -p <INSTALL_DIR>/lib/ <INSTALL_DIR>/bin/ && find <BINARY_DIR>/lib/ | grep '\\.a$' | xargs -I@ cp @ <INSTALL_DIR>/lib/ && make install-cmake-exports && make install-llvm-headers && cp <BINARY_DIR>/NATIVE/bin/llvm-tblgen <INSTALL_DIR>/bin/ ")
+endif()
+
 set(LLVM_TARGET_LIBS "")
 foreach(llvm_target IN LISTS LLVM_LIBRARY_TARGETS)
   list(APPEND LLVM_TARGET_LIBS "<INSTALL_DIR>/lib/lib${llvm_target}.a")
 endforeach(llvm_target)
 
-ExternalProject_Add(embedded_llvm
-  URL "${LLVM_DOWNLOAD_URL}"
-  URL_HASH "${LLVM_URL_CHECKSUM}"
-  CMAKE_ARGS "${LLVM_CONFIGURE_FLAGS}"
-  BUILD_BYPRODUCTS ${LLVM_TARGET_LIBS}
-  UPDATE_DISCONNECTED 1
-  DOWNLOAD_NO_PROGRESS 1
-)
+if("${LLVM_BUILD_COMMAND}" STREQUAL "")
+  ExternalProject_Add(embedded_llvm
+    URL "${LLVM_DOWNLOAD_URL}"
+    URL_HASH "${LLVM_URL_CHECKSUM}"
+    CMAKE_ARGS "${LLVM_CONFIGURE_FLAGS}"
+    BUILD_BYPRODUCTS ${LLVM_TARGET_LIBS}
+    INSTALL_COMMAND /bin/bash -c "${LLVM_INSTALL_COMMAND}"
+    UPDATE_DISCONNECTED 1
+    DOWNLOAD_NO_PROGRESS 1
+  )
+else()
+  ExternalProject_Add(embedded_llvm
+    URL "${LLVM_DOWNLOAD_URL}"
+    URL_HASH "${LLVM_URL_CHECKSUM}"
+    CMAKE_ARGS "${LLVM_CONFIGURE_FLAGS}"
+    BUILD_COMMAND /bin/bash -c "${LLVM_BUILD_COMMAND}"
+    INSTALL_COMMAND /bin/bash -c "${LLVM_INSTALL_COMMAND}"
+    BUILD_BYPRODUCTS ${LLVM_TARGET_LIBS}
+    UPDATE_DISCONNECTED 1
+    DOWNLOAD_NO_PROGRESS 1
+  )
+endif()
 
 # Set up build targets and map to embedded paths
 ExternalProject_Get_Property(embedded_llvm INSTALL_DIR)
