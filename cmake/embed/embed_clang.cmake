@@ -70,12 +70,6 @@ else()
       )
 endif()
 
-
-set(CLANG_TARGET_LIBS "")
-foreach(clang_target IN LISTS CLANG_LIBRARY_TARGETS)
-  list(APPEND CLANG_TARGET_LIBS "<INSTALL_DIR>/lib/lib${clang_target}.a")
-endforeach(clang_target)
-
 # These configure flags are a blending of the Alpine, debian, and gentoo
 # packages configure flags, customized to reduce build targets as much as
 # possible
@@ -99,6 +93,11 @@ set(CLANG_CONFIGURE_FLAGS  -Wno-dev
 if(EMBED_LLVM)
   list(APPEND CLANG_CONFIGURE_FLAGS  -DLLVM_DIR=${EMBEDDED_LLVM_INSTALL_DIR}/lib/cmake/llvm)
 endif()
+
+set(CLANG_TARGET_LIBS "")
+foreach(clang_target IN LISTS CLANG_LIBRARY_TARGETS)
+  list(APPEND CLANG_TARGET_LIBS "<INSTALL_DIR>/lib/lib${clang_target}.a")
+endforeach(clang_target)
 
 # No way to conditionally pass arguments, so branch based on whether a custom
 # build command was defined, as this passes make/ninja, and job count.
