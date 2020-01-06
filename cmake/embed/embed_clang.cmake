@@ -34,17 +34,19 @@ else()
   message(FATAL_ERROR "No supported LLVM version has been specified with LLVM_VERSION (LLVM_VERSION=${LLVM_VERSION}), aborting")
 endif()
 
-set(CLANG_PATCH_COMMAND "/bin/true")
-set(LIBCLANG_INSTALL_COMMAND "mkdir -p <INSTALL_DIR>/lib/ && \
+# Clang always needs a custom install command, because libclang isn't installed
+# by the all target.
+set(libclang_install_command "mkdir -p <INSTALL_DIR>/lib/ && \
                               cp <BINARY_DIR>/lib/libclang.a <INSTALL_DIR>/lib/libclang.a")
-
-set(CLANG_INSTALL_COMMAND "make install && ${LIBCLANG_INSTALL_COMMAND}") # FIXME work with ninja / detect generator?
+set(clang_install_command "${CMAKE_MAKE_PROGRAM} install && ${libclang_install_command}") # FIXME work with ninja / detect generator?
+set(CLANG_INSTALL_COMMAND INSTALL_COMMAND /bin/bash -c "${clang_install_command}")
 
 if(NOT EMBED_LLVM)
   # If not linking and building against embedded LLVM, patches may need to
   # be applied to link with the distribution LLVM. This is handled by a
   # helper function
-  prepare_clang_patches(CLANG_PATCH_COMMAND)
+  prepare_clang_patches(patch_command)
+  set(CLANG_PATCH_COMMAND PATCH_COMMAND /bin/bash -c "${patch_command}")
 endif()
 
 if(EMBED_LIBCLANG_ONLY)
@@ -52,8 +54,8 @@ if(EMBED_LIBCLANG_ONLY)
   set(CLANG_LIBRARY_TARGETS clang)
   # Include system clang here to deal with the rest of the targets
 
-  set(CLANG_BUILD_COMMAND "make libclang_static -j${nproc}")
-  set(CLANG_INSTALL_COMMAND "${LIBCLANG_INSTALL_COMMAND}")
+  set(CLANG_BUILD_COMMAND BUILD_COMMAND "${CMAKE_MAKE_PROGRAM} libclang_static -j${nproc}")
+  set(CLANG_INSTALL_COMMAND INSTALL_COMMAND /bin/bash -c "${libclang_install_command}")
   find_package(Clang REQUIRED)
   include_directories(SYSTEM ${CLANG_INCLUDE_DIRS})
 else()
@@ -143,33 +145,18 @@ foreach(clang_target IN LISTS CLANG_LIBRARY_TARGETS)
   list(APPEND CLANG_TARGET_LIBS "<INSTALL_DIR>/lib/lib${clang_target}.a")
 endforeach(clang_target)
 
-# No way to conditionally pass arguments, so branch based on whether a custom
-# build command was defined, as this passes make/ninja, and job count.
-if("${CLANG_BUILD_COMMAND}" STREQUAL "")
-  # Inherit from parent cmake for Make settings
-  ExternalProject_Add(embedded_clang
-    URL "${CLANG_DOWNLOAD_URL}"
-    URL_HASH "${CLANG_URL_CHECKSUM}"
-    CMAKE_ARGS "${CLANG_CONFIGURE_FLAGS}"
-    PATCH_COMMAND /bin/bash -c "${CLANG_PATCH_COMMAND}"
-    INSTALL_COMMAND /bin/bash -c "${CLANG_INSTALL_COMMAND}"
-    BUILD_BYPRODUCTS ${CLANG_TARGET_LIBS}
-    UPDATE_DISCONNECTED 1
-    DOWNLOAD_NO_PROGRESS 1
-  )
-else()
- ExternalProject_Add(embedded_clang
-    URL "${CLANG_DOWNLOAD_URL}"
-    URL_HASH "${CLANG_URL_CHECKSUM}"
-    CMAKE_ARGS "${CLANG_CONFIGURE_FLAGS}"
-    PATCH_COMMAND /bin/bash -c "${CLANG_PATCH_COMMAND}"
-    BUILD_COMMAND /bin/bash -c "${CLANG_BUILD_COMMAND}"
-    INSTALL_COMMAND /bin/bash -c "${CLANG_INSTALL_COMMAND}"
-    BUILD_BYPRODUCTS ${CLANG_TARGET_LIBS}
-    UPDATE_DISCONNECTED 1
-    DOWNLOAD_NO_PROGRESS 1
-  )
-endif()
+# Inherit from parent cmake for Make settings
+ExternalProject_Add(embedded_clang
+  URL "${CLANG_DOWNLOAD_URL}"
+  URL_HASH "${CLANG_URL_CHECKSUM}"
+  CMAKE_ARGS "${CLANG_CONFIGURE_FLAGS}"
+  ${CLANG_BUILD_COMMAND}
+  ${CLANG_PATCH_COMMAND}
+  ${CLANG_INSTALL_COMMAND}
+  BUILD_BYPRODUCTS ${CLANG_TARGET_LIBS}
+  UPDATE_DISCONNECTED 1
+  DOWNLOAD_NO_PROGRESS 1
+)
 
 # If LLVM is also being embedded, build it first
 if (EMBED_LLVM)
