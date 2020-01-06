@@ -3,6 +3,11 @@ if(NOT EMBED_LLVM)
 endif()
 include(embed_helpers)
 
+# FIXME use this approach for externalproject vars:
+# https://chromium.googlesource.com/external/github.com/llvm-mirror/llvm/+/refs/heads/master/cmake/modules/LLVMExternalProjectUtils.cmake#169
+
+# CMAKE_MAKE_PROGRAM # FIXME use this instead of make
+
 # TO DO
 # Set up cross-compilation
 # https://cmake.org/cmake/help/v3.6/manual/cmake-toolchains.7.html#cross-compiling-using-clang
@@ -134,6 +139,7 @@ set(LLVM_CONFIGURE_FLAGS   -Wno-dev
                            )
 
 if(${TARGET_TRIPLE} MATCHES android)
+  ProcessorCount(nproc)
   list(APPEND LLVM_CONFIGURE_FLAGS -DCMAKE_TOOLCHAIN_FILE=/opt/android-ndk/build/cmake/android.toolchain.cmake)
   list(APPEND LLVM_CONFIGURE_FLAGS -DANDROID_ABI=${ANDROID_ABI})
   list(APPEND LLVM_CONFIGURE_FLAGS -DANDROID_NATIVE_API_LEVEL=${ANDROID_NATIVE_API_LEVEL})
@@ -141,8 +147,10 @@ if(${TARGET_TRIPLE} MATCHES android)
   #list(APPEND LLVM_CONFIGURE_FLAGS -DLLVM_TABLEGEN=${LLVM_TBLGEN_PATH})
   #list(APPEND LLVM_CONFIGURE_FLAGS -DBUILD_SHARED_LIBS=ON)
   #-DCLANG_TABLEGEN=$(abspath $(HOST_OUT_DIR)/bin/clang-tblgen) \
+
+  # LLVMHello doesn't work, so we need to build everything except for this
   string(REPLACE ";" " " LLVM_MAKE_TARGETS "${LLVM_LIBRARY_TARGETS}" )
-  set(LLVM_BUILD_COMMAND "make -j${nproc} ${LLVM_MAKE_TARGETS} ") # nproc?
+  set(LLVM_BUILD_COMMAND "make -j${nproc} ${LLVM_MAKE_TARGETS} ")
   message("USING BUILD COMMAND ${BUILD_COMMAND}")
   set(LLVM_INSTALL_COMMAND "mkdir -p <INSTALL_DIR>/lib/ <INSTALL_DIR>/bin/ && find <BINARY_DIR>/lib/ | grep '\\.a$' | xargs -I@ cp @ <INSTALL_DIR>/lib/ && make install-cmake-exports && make install-llvm-headers && cp <BINARY_DIR>/NATIVE/bin/llvm-tblgen <INSTALL_DIR>/bin/ ")
 endif()
