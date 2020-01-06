@@ -91,6 +91,26 @@ the ExternalProject.
 These are currently used to patch the embedded libclang build to link to system
 libraries on Debian.
 
+Luckily this is actually pulling patches directly from LLVM's own build repo,
+which is linked to by https://apt.llvm.org/. You can see the branch associated
+with the LLVM version. This shows the patch series used to build LLVM 9, etc for
+Debian.
+
+In the case of LLVM 8, to get libclang.a to build only one patch, is needed,
+not the whole series. The worst possible case in adding support for a new LLVM
+version is to copy the series file, and set "-p2" or "-p1" depending on if it
+is LLVM itself or a subproject, and what patch level it was written at.
+
+The workflow on a new LLVM release support linking to system libs would be to:
+
+* Try it with the existing patch series and maybe it just works
+* Examine the build failure, and grep for patches affecting these files from
+those in the patch series on the LLVM 9 / 10 etc branch
+* Add patches to the series file until there is a minimal one that builds.
+Most of the time the patches change minor cosmetic things, no major
+functionality. In this case, the patch makes it from KFreebsd to kFreebsd which
+breaks a header, but it is easy to fix
+
 # Building on CI
 
 In order to build successfully in an environment like Travis CI, it is
