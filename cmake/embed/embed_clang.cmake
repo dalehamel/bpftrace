@@ -3,6 +3,13 @@ if(NOT EMBED_CLANG)
 endif()
 include(embed_helpers)
 
+get_host_triple(HOST_TRIPLE)
+get_target_triple(TARGET_TRIPLE)
+
+if(NOT "${HOST_TRIPLE}" STREQUAL "${TARGET_TRIPLE}")
+  set(CROSS_COMPILING_CLANG ON)
+endif()
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(EMBEDDED_BUILD_TYPE "RelWithDebInfo")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -94,6 +101,43 @@ if(EMBED_LLVM)
   list(APPEND CLANG_CONFIGURE_FLAGS  -DLLVM_DIR=${EMBEDDED_LLVM_INSTALL_DIR}/lib/cmake/llvm)
 endif()
 
+if(${TARGET_TRIPLE} MATCHES android)
+  ProcessorCount(nproc)
+
+  # FIXME incompatible with libclang_only (can't do when cross compiling right now)
+
+  list(APPEND CLANG_CONFIGURE_FLAGS -DCMAKE_TOOLCHAIN_FILE=/opt/android-ndk/build/cmake/android.toolchain.cmake)
+  list(APPEND CLANG_CONFIGURE_FLAGS -DANDROID_ABI=${ANDROID_ABI})
+  list(APPEND CLANG_CONFIGURE_FLAGS -DANDROID_NATIVE_API_LEVEL=${ANDROID_NATIVE_API_LEVEL})
+  list(APPEND CLANG_CONFIGURE_FLAGS -DLLVM_CONFIG_PATH=${LLVM_CONFIG_PATH})
+  list(APPEND CLANG_CONFIGURE_FLAGS -DLLVM_TABLEGEN=${LLVM_TBLGEN_PATH})
+  list(APPEND CLANG_CONFIGURE_FLAGS -DLLVM_TABLEGEN_EXE=${LLVM_TBLGEN_PATH})
+  list(APPEND CLANG_CONFIGURE_FLAGS -DCMAKE_CROSSCOMPILING=True)
+  #list(APPEND LLVM_CONFIGURE_FLAGS -DBUILD_SHARED_LIBS=ON)
+  string(REPLACE ";" " " CLANG_MAKE_TARGETS "${CLANG_LIBRARY_TARGETS}" )
+  set(CLANG_BUILD_COMMAND "make -j${nproc} ${CLANG_MAKE_TARGETS}") # nproc?
+  message("USING BUILD COMMAND ${BUILD_COMMAND}")
+  set(INSTALL_COMMAND "mkdir -p <INSTALL_DIR>/lib/ && find <BINARY_DIR>/lib/ | grep '\\.a$' | xargs -I@ cp @ <INSTALL_DIR>/lib/")
+endif()
+
+if(${CROSS_COMPILING_CLANG})
+  # FIXME is there a way to reuse the existing sources? do we care?
+  ExternalProject_Add(embedded_clang_host
+    URL "${CLANG_DOWNLOAD_URL}"
+    URL_HASH "${CLANG_URL_CHECKSUM}"
+    #CONFIGURE_COMMAND /bin/bash -xc "cmake <SOURCE_DIR>"
+    BUILD_COMMAND /bin/bash -c "make -j${nproc} clang-tblgen"
+    INSTALL_COMMAND /bin/bash -c "mkdir -p <INSTALL_DIR>/bin && cp <BINARY_DIR>/bin/clang-tblgen <INSTALL_DIR>/bin"
+    UPDATE_DISCONNECTED 1
+    DOWNLOAD_NO_PROGRESS 1
+  ) # FIXME set build byproducts for ninja
+
+  ExternalProject_Get_Property(embedded_clang_host INSTALL_DIR)
+  set(CLANG_TBLGEN_PATH "${INSTALL_DIR}/bin/clang-tblgen")
+
+  list(APPEND CLANG_CONFIGURE_FLAGS -DCLANG_TABLEGEN=${CLANG_TBLGEN_PATH})
+endif()
+
 set(CLANG_TARGET_LIBS "")
 foreach(clang_target IN LISTS CLANG_LIBRARY_TARGETS)
   list(APPEND CLANG_TARGET_LIBS "<INSTALL_DIR>/lib/lib${clang_target}.a")
@@ -132,6 +176,9 @@ if (EMBED_LLVM)
   ExternalProject_Add_StepDependencies(embedded_clang install embedded_llvm)
 endif()
 
+if(${CROSS_COMPILING_CLANG})
+  ExternalProject_Add_StepDependencies(embedded_clang install embedded_clang_host)
+endif()
 
 # Set up library targets and locations
 ExternalProject_Get_Property(embedded_clang INSTALL_DIR)
