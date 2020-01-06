@@ -145,7 +145,6 @@ foreach(clang_target IN LISTS CLANG_LIBRARY_TARGETS)
   list(APPEND CLANG_TARGET_LIBS "<INSTALL_DIR>/lib/lib${clang_target}.a")
 endforeach(clang_target)
 
-# Inherit from parent cmake for Make settings
 ExternalProject_Add(embedded_clang
   URL "${CLANG_DOWNLOAD_URL}"
   URL_HASH "${CLANG_URL_CHECKSUM}"
@@ -175,6 +174,8 @@ set(CLANG_EMBEDDED_CMAKE_TARGETS "")
 include_directories(SYSTEM ${EMBEDDED_CLANG_INSTALL_DIR}/include)
 
 foreach(clang_target IN LISTS CLANG_LIBRARY_TARGETS)
+  # Special handling is needed to not overlap with the library definition from
+  # system cmake files for Clang's "clang" target.
   if(EMBED_LIBCLANG_ONLY AND ${clang_target} STREQUAL "clang")
     set(clang_target "embedded-libclang")
     list(APPEND CLANG_EMBEDDED_CMAKE_TARGETS ${clang_target})
