@@ -47,6 +47,7 @@ ExternalProject_Add(embedded_gnulib
   UPDATE_DISCONNECTED 1
   DOWNLOAD_NO_PROGRESS 1
 )
+
 ExternalProject_Get_Property(embedded_gnulib INSTALL_DIR)
 set(EMBEDDED_GNULIB_INSTALL_DIR ${INSTALL_DIR})
 
@@ -72,35 +73,31 @@ set(ELFUTILS_CHECKSUM "SHA256=eb5747c371b0af0f71e86215a5ebb88728533c3a104a43d423
 # library dir for argp
 #
 
-set(LIBINTL_H_HACK " \
-#ifndef LIBINTL_H \
-#define LIBINTL_H \
+set(LIBINTL_H_HACK "\n\
+#ifndef LIBINTL_H \n\
+#define LIBINTL_H \n\
  \
-// libintl.h is included in a lot of sources in efutils, but provided \
-// functionalities are not really necessary. Because of that we follow \
-// the AOSP example and provide a fake header turning some functions into \
-// nops with macros \
- \
-#define gettext(x)      (x) \
-#define dgettext(x,y)   (y) \
- \
+// libintl.h is included in a lot of sources in efutils, but provided \n\
+// functionalities are not really necessary. Because of that we follow \n\
+// the AOSP example and provide a fake header turning some functions into \n\
+// nops with macros \n\
+ \n\
+#define gettext(x)      (x) \n\
+#define dgettext(x,y)   (y) \n\
+ \n\
 #endif")
-
-# FIXME can this be done with -D ?
-set(FALLTHROUGH_FIX " \
-#if __has_cpp_attribute(fallthrough) \
-#define FALLTHROUGH [[fallthrough]] \
-#elif __has_cpp_attribute(clang::fallthrough) \
-#define FALLTHROUGH [[clang::fallthrough]] \
-#else \
-#define FALLTHROUGH \
-#endif")
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/embedded_libelf-prefix/build_include/libintl.h "${LIBINTL_H_HACK}")
 
 set(ELFUTILS_CROSS_EXPORTS "${CROSS_EXPORTS} && \
                             export LDFLAGS=-L${EMBEDDED_GNULIB_INSTALL_DIR}/lib && \
-                            export CFLAGS=-I${EMBEDDED_GNULIB_INSTALL_DIR}/include")
-                            # export CFLAGS=${CFLAGS} -Dprogram_invocation_short_name=\\"no-program_invocation_short_name\\"")
-
+                            export CFLAGS=-I${EMBEDDED_GNULIB_INSTALL_DIR}/include && \
+                            export CFLAGS=\"$CFLAGS -I<INSTALL_DIR>/build_include\" && \
+                            export CFLAGS=\"$CFLAGS -Dprogram_invocation_short_name=\\\\\\\"no-program_invocation_short_name\\\\\\\"\"")
+                                                                                    # OH MY GOD SO MUCH ESCAPING
+# This makes the build system compatible with clang by:
+# - Removing the GNU99 check from configure
+# - Getting rid of -Wtrampolines since there are no nested functions anyways
+# - Changing fallthrough warning
 set(ELFUTILS_PATCH_COMMAND PATCH_COMMAND /bin/bash -c
                                         "sed -i -e '5010,5056d' <SOURCE_DIR>/configure &&\
                                          sed -i 's/-Wtrampolines//g' <SOURCE_DIR>/lib/Makefile.in &&\
@@ -115,8 +112,8 @@ ExternalProject_Add(embedded_libelf
   CONFIGURE_COMMAND /bin/bash -xc "${ELFUTILS_CROSS_EXPORTS} && \
                                   cd <BINARY_DIR> && \
                                   <SOURCE_DIR>/configure --host armv7a-linux-androideabi --prefix <INSTALL_DIR>"
-  BUILD_COMMAND /bin/bash -c "cd lib && make -j${nproc} && \
-                              cd libelf && make -j${nproc}"
+  BUILD_COMMAND /bin/bash -c "cd <BINARY_DIR>/lib && make -j${nproc} && \
+                              cd <BINARY_DIR>/libelf && make -j${nproc}"
   INSTALL_COMMAND /bin/bash -c "cd libelf && make install"
   UPDATE_DISCONNECTED 1
   DOWNLOAD_NO_PROGRESS 1
@@ -124,3 +121,6 @@ ExternalProject_Add(embedded_libelf
 
 # FIXME only if cross compiling maybe? Or check if library not found?
 ExternalProject_Add_StepDependencies(embedded_libelf install embedded_gnulib)
+
+ExternalProject_Get_Property(embedded_libelf INSTALL_DIR)
+set(EMBEDDED_LIBELF_INSTALL_DIR ${INSTALL_DIR})
