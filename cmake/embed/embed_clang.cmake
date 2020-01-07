@@ -106,30 +106,38 @@ endif()
 if(${TARGET_TRIPLE} MATCHES android)
   ProcessorCount(nproc)
 
+  if(EMBED_LIBCLANG_ONLY)
+    message(FATAL_ERROR "Cannot set EMBED_LIBCLANG_ONLY on Android.")
+  endif()
+
   # FIXME incompatible with libclang_only (can't do when cross compiling right now)
 
   list(APPEND CLANG_CONFIGURE_FLAGS -DCMAKE_TOOLCHAIN_FILE=/opt/android-ndk/build/cmake/android.toolchain.cmake)
   list(APPEND CLANG_CONFIGURE_FLAGS -DANDROID_ABI=${ANDROID_ABI})
   list(APPEND CLANG_CONFIGURE_FLAGS -DANDROID_NATIVE_API_LEVEL=${ANDROID_NATIVE_API_LEVEL})
-  #list(APPEND CLANG_CONFIGURE_FLAGS -DLLVM_CONFIG_PATH=${LLVM_CONFIG_PATH})
-  list(APPEND CLANG_CONFIGURE_FLAGS -DLLVM_TABLEGEN=${LLVM_TBLGEN_PATH})
-  list(APPEND CLANG_CONFIGURE_FLAGS -DLLVM_TABLEGEN_EXE=${LLVM_TBLGEN_PATH}) # is this also needed?
   list(APPEND CLANG_CONFIGURE_FLAGS -DCMAKE_CROSSCOMPILING=True)
-  #list(APPEND LLVM_CONFIGURE_FLAGS -DBUILD_SHARED_LIBS=ON)
+
   string(REPLACE ";" " " CLANG_MAKE_TARGETS "${CLANG_LIBRARY_TARGETS}" )
-  set(CLANG_BUILD_COMMAND "make -j${nproc} ${CLANG_MAKE_TARGETS}") # nproc?
-  message("USING BUILD COMMAND ${BUILD_COMMAND}")
-  set(INSTALL_COMMAND "mkdir -p <INSTALL_DIR>/lib/ && find <BINARY_DIR>/lib/ | grep '\\.a$' | xargs -I@ cp @ <INSTALL_DIR>/lib/")
+  set(CLANG_BUILD_COMMAND BUILD_COMMAND /bin/bash -c
+                                            "${CMAKE_MAKE_PROGRAM} -j${nproc} ${CLANG_MAKE_TARGETS}")
+  set(CLANG_INSTALL_COMMAND INSTALL_COMMAND /bin/bash -c
+                                             "mkdir -p <INSTALL_DIR>/lib/ && \
+                                             find <BINARY_DIR>/lib/ | \
+                                             grep '\\.a$' | \
+                                             xargs -I@ cp @ <INSTALL_DIR>/lib/")
 endif()
 
 if(${CROSS_COMPILING_CLANG})
-  # FIXME is there a way to reuse the existing sources? do we care?
+  ProcessorCount(nproc)
+
+  # If cross-compling, a host architecture clang-tblgen is needed
   ExternalProject_Add(embedded_clang_host
     URL "${CLANG_DOWNLOAD_URL}"
     URL_HASH "${CLANG_URL_CHECKSUM}"
-    #CONFIGURE_COMMAND /bin/bash -xc "cmake <SOURCE_DIR>"
-    BUILD_COMMAND /bin/bash -c "make -j${nproc} clang-tblgen"
-    INSTALL_COMMAND /bin/bash -c "mkdir -p <INSTALL_DIR>/bin && cp <BINARY_DIR>/bin/clang-tblgen <INSTALL_DIR>/bin"
+    BUILD_COMMAND /bin/bash -c "${CMAKE_MAKE_PROGRAM} -j${nproc} clang-tblgen"
+    INSTALL_COMMAND /bin/bash -c "mkdir -p <INSTALL_DIR>/bin && \
+                                  cp <BINARY_DIR>/bin/clang-tblgen <INSTALL_DIR>/bin"
+    BUILD_BYPRODUCTS <INSTALL_DIR>/bin/clang-tblgen
     UPDATE_DISCONNECTED 1
     DOWNLOAD_NO_PROGRESS 1
   ) # FIXME set build byproducts for ninja
@@ -170,7 +178,6 @@ endif()
 ExternalProject_Get_Property(embedded_clang INSTALL_DIR)
 set(EMBEDDED_CLANG_INSTALL_DIR ${INSTALL_DIR})
 set(CLANG_EMBEDDED_CMAKE_TARGETS "")
-
 include_directories(SYSTEM ${EMBEDDED_CLANG_INSTALL_DIR}/include)
 
 foreach(clang_target IN LISTS CLANG_LIBRARY_TARGETS)
