@@ -4,7 +4,7 @@ endif()
 
 set(BCC_VERSION "v0.12.0")
 set(BCC_DOWNLOAD_URL "https://github.com/iovisor/bcc/archive/${BCC_VERSION}.tar.gz")
-set(BCC_CHECKSUM "SHA256=00a1ee1f389f81e9979f3a640a01c431b3021de0d42278f6508391a2f0b81c9a")
+set(BCC_CHECKSUM "SHA256=53a247b8f5b654e3c6a003124b0c31ecc93a53cb9dddc87a0de5a8d290dfbee8")
 
 set(BCC_CONFIGURE_FLAGS  -Wno-dev
                          -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
