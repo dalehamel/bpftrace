@@ -6,6 +6,7 @@ include(embed_helpers)
 get_host_triple(HOST_TRIPLE)
 get_target_triple(TARGET_TRIPLE)
 
+# FIXME this should probably be in CMakeList.txt as other things need to know
 if(NOT "${HOST_TRIPLE}" STREQUAL "${TARGET_TRIPLE}")
   set(CROSS_COMPILING_CLANG ON)
 endif()
