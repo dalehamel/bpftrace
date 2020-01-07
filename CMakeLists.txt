@@ -85,6 +85,10 @@ else()
 endif()
 
 if(EMBED_BCC)
+
+  # IF cross compiling, include flex?
+  # and set hint path?
+  #include(embed_flex)
   include(embed_bcc)
 else()
   find_package(LibBcc REQUIRED)
@@ -100,6 +104,7 @@ else()
 # They likely just set a variable that is used to find the path of each executable
 # which is all we need to override
 # Perhaps this can be done with HINTS or PATHS https://cmake.org/cmake/help/latest/command/find_package.html
+# Actually, it looks like they are in the HOST format?
   find_package(BISON REQUIRED)
   find_package(FLEX REQUIRED)
   bison_target(bison_parser src/parser.yy ${CMAKE_BINARY_DIR}/parser.tab.cc VERBOSE)

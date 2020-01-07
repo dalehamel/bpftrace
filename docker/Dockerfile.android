@@ -13,6 +13,7 @@ ENV LLVM_VERSION=$LLVM_VERSION
 # --- Install required tools
 
 RUN apt-get update && apt-get install -y \
+      automake \
       build-essential \
       cmake \
       unzip \
