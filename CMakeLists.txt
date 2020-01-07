@@ -12,6 +12,8 @@ set(STATIC_LIBC OFF CACHE BOOL "Attempt to embed libc, only known to work with m
 set(EMBED_LLVM OFF CACHE BOOL "Build LLVM static libs as an ExternalProject and link to these instead of system libs.")
 set(EMBED_CLANG OFF CACHE BOOL "Build Clang static libs as an ExternalProject and link to these instead of system libs.")
 set(EMBED_LIBCLANG_ONLY OFF CACHE BOOL "Build only libclang.a, and link to system libraries statically")
+set(EMBED_BCC OFF CACHE BOOL "Build bcc libs as an ExternalProject and link to these instead of system libs.")
+set(EMBED_LIBELF OFF CACHE BOOL "Build bcc libs as an ExternalProject and link to these instead of system libs.")
 set(LLVM_VERSION "8" CACHE STRING "Embedded LLVM/Clang version to build and link against.")
 set(BUILD_ASAN OFF CACHE BOOL "Build bpftrace with -fsanitize=address")
 
@@ -75,17 +77,29 @@ endif(STATIC_LINKING)
 
 set(FIND_LIBRARY_USE_LIB64_PATHS TRUE)
 
+if(EMBED_LIBELF)
+  include(embed_libelf)
+else()
+  find_package(LibElf REQUIRED)
+  include_directories(SYSTEM ${LIBELF_INCLUDE_DIRS})
+endif()
+
+if(EMBED_BCC)
+  include(embed_bcc)
+else()
+  find_package(LibBcc REQUIRED)
+  include_directories(SYSTEM ${LIBBCC_INCLUDE_DIRS})
+endif()
+
 get_target_triple(TARGET_TRIPLE)
 if(${TARGET_TRIPLE} MATCHES android)
   message("Skipping deps because android for now")
 else()
 
-  find_package(LibBcc REQUIRED)
-  include_directories(SYSTEM ${LIBBCC_INCLUDE_DIRS})
-  
-  find_package(LibElf REQUIRED)
-  include_directories(SYSTEM ${LIBELF_INCLUDE_DIRS})
-  
+# Flex and Bison seem to just be built-time dependencies for the binary
+# They likely just set a variable that is used to find the path of each executable
+# which is all we need to override
+# Perhaps this can be done with HINTS or PATHS https://cmake.org/cmake/help/latest/command/find_package.html
   find_package(BISON REQUIRED)
   find_package(FLEX REQUIRED)
   bison_target(bison_parser src/parser.yy ${CMAKE_BINARY_DIR}/parser.tab.cc VERBOSE)
@@ -121,7 +135,7 @@ else()
   set(CMAKE_EXTRA_INCLUDE_FILES)
   
   find_package(LibBpf)
-  find_package(LibBfd)
+  find_package(LibBfd) # From binutils, android llvm toolchain uses 2.27 so lets try those sources https://ftp.gnu.org/gnu/binutils/binutils-2.27.tar.gz
   find_package(LibOpcodes)
   
   if(${LIBBFD_FOUND} AND ${LIBOPCODES_FOUND})
@@ -161,7 +175,7 @@ else()
 endif()
 
 if(${TARGET_TRIPLE} MATCHES android)
-  message("Skipping sources because android for now")
+  message("Skipping sources because android for now, until the deps are built")
 else()
 
   add_subdirectory(src/arch)
