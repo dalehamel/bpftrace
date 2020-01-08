@@ -37,11 +37,26 @@ if(${TARGET_TRIPLE} MATCHES android)
 
   set(BCC_BUILD_COMMAND BUILD_COMMAND /bin/bash -c "make -j${nproc} bcc-static bcc-loader-static bpf-static")
 
+  # Based on reading the cmake file to get the headers to install, would be nice if
+  # it had a header-install target :)
   set(BCC_INSTALL_COMMAND INSTALL_COMMAND /bin/bash -c " \
-           mkdir -p <INSTALL_DIR>/lib && \
+           mkdir -p <INSTALL_DIR>/lib <INSTALL_DIR>/include/bcc && \
+           mkdir -p <INSTALL_DIR>/include/bcc/compat/linux  && \
            cp <BINARY_DIR>/src/cc/libbcc.a <INSTALL_DIR>/lib && \
            cp <BINARY_DIR>/src/cc/libbcc_bpf.a <INSTALL_DIR>/lib && \
-           cp <BINARY_DIR>/src/cc/libbcc-loader-static.a <INSTALL_DIR>/lib")
+           cp <BINARY_DIR>/src/cc/libbcc-loader-static.a <INSTALL_DIR>/lib && \
+           cp <SOURCE_DIR>/src/cc/libbpf.h <INSTALL_DIR>/include/bcc && \
+           cp <SOURCE_DIR>/src/cc/perf_reader.h <INSTALL_DIR>/include/bcc && \
+           cp <SOURCE_DIR>/src/cc/file_desc.h <INSTALL_DIR>/include/bcc && \
+           cp <SOURCE_DIR>/src/cc/table_desc.h <INSTALL_DIR>/include/bcc && \
+           cp <SOURCE_DIR>/src/cc/table_storage.h <INSTALL_DIR>/include/bcc && \
+           cp <SOURCE_DIR>/src/cc/bcc_common.h <INSTALL_DIR>/include/bcc && \
+           cp <SOURCE_DIR>/src/cc/bpf_module.h <INSTALL_DIR>/include/bcc && \
+           cp <SOURCE_DIR>/src/cc/bcc_exception.h <INSTALL_DIR>/include/bcc && \
+           cp <SOURCE_DIR>/src/cc/bcc_syms.h <INSTALL_DIR>/include/bcc && \
+           cp <SOURCE_DIR>/src/cc/bcc_proc.h <INSTALL_DIR>/include/bcc && \
+           cp <SOURCE_DIR>/src/cc/bcc_elf.h <INSTALL_DIR>/include/bcc && \
+           cp <SOURCE_DIR>/src/cc/libbpf/include/uapi/linux/*.h <INSTALL_DIR>/include/bcc/compat/linux")
 
   if(EMBED_FLEX)
   # FIXME append flex binary path
@@ -74,11 +89,9 @@ ExternalProject_Add(embedded_bcc
   DOWNLOAD_NO_PROGRESS 1
 )
 
+ExternalProject_Get_Property(embedded_bcc INSTALL_DIR)
+set(EMBEDDED_BCC_INSTALL_DIR ${INSTALL_DIR})
+
 if(EMBED_LIBELF)
   ExternalProject_Add_StepDependencies(embedded_bcc install embedded_libelf)
 endif()
-
-if(EMBED_FLEX)
-  ExternalProject_Add_StepDependencies(embedded_bcc install embedded_flex)
-endif()
-
