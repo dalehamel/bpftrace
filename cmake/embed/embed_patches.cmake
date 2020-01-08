@@ -1,3 +1,8 @@
+# This file is for handling the logic of downloading and applying any necessary
+# patches to external projects, using helper functions and the `quilt` utility
+# Each package that needs to be patched should define their own patch function
+# that can handle the logic necessary to correctly patch the project.
+
 # Patch function for clang to be able to link to system LLVM
 function(prepare_clang_patches patch_command)
   message("Building embedded Clang against host LLVM, checking compatibiilty...")
@@ -56,3 +61,48 @@ function(prepare_clang_patches patch_command)
   endif()
   set(${patch_command} "${CLANG_PATCH_COMMAND}" PARENT_SCOPE)
 endfunction(prepare_clang_patches patch_command)
+
+function(prepare_bcc_patches patch_command)
+  get_target_triple(TARGET_TRIPLE)
+
+  # FIXME maybe check BCC version and bail / warn if not 0.12.0?
+  if(${TARGET_TRIPLE} MATCHES android)
+    set(BCC_ANDROID_PATCH_URL "https://gist.github.com/dalehamel/da2f73357cd8cc4e60a1218e562a472b/archive/0accba3a1f10956c1323d7c5742e663a4a7c8370.tar.gz")
+    set(BCC_ANDROID_PATCH_CHECKSUM 2b845a5de3cc2d49924b632d3e7a2fca53c55151e586528750ace2cb2aae23db)
+
+    set(PATCH_NAME "bcc-patches.tar.gz")
+    set(PATCH_PATH "${CMAKE_CURRENT_BINARY_DIR}/bcc-android/")
+
+    set(BCC_ANDROID_PATCH_SERIES "")
+    list(APPEND BCC_ANDROID_PATCH_SERIES "")
+
+    message("${NUM_PATCHES} patches will be applied for BCC to build correctly for Android.")
+    fetch_patches(${PATCH_NAME} ${PATCH_PATH} ${BCC_ANDROID_PATCH_URL} ${BCC_ANDROID_PATCH_CHECKSUM})
+    prepare_patch_series("${BCC_ANDROID_PATCH_SERIES}" ${PATCH_PATH})
+    set(BCC_ANDROID_PATCH_COMMAND "(QUILT_PATCHES=${PATCH_PATH} quilt push -a || [[ $? -eq 2 ]])")
+  endif()
+  set(${patch_command} "${BCC_ANDROID_PATCH_COMMAND}" PARENT_SCOPE)
+endfunction(prepare_bcc_patches patch_command)
+
+function(prepare_libelf_patches patch_command)
+  get_target_triple(TARGET_TRIPLE)
+
+  # FIXME this should actually check if toolchain is LLVM, not android. Nothing
+  # here is android specific, android toolchain just happens to use LLVM
+  if(${TARGET_TRIPLE} MATCHES android)
+    set(LIBELF_LLVM_PATCH_URL "https://gist.github.com/dalehamel/8fc4d9d25295e86d4347229270f29b48/archive/603ac72b18e242a7f4bd31be39419db3a4bd9a83.tar.gz")
+    set(LIBELF_LLVM_PATCH_CHECKSUM 2b845a5de3cc2d49924b632d3e7a2fca53c55151e586528750ace2cb2aae23db)
+
+    set(PATCH_NAME "libelf-llvm-patches.tar.gz")
+    set(PATCH_PATH "${CMAKE_CURRENT_BINARY_DIR}/libelf-llvm/")
+
+    set(LIBELF_LLVM_PATCH_SERIES "")
+    list(APPEND LIBELF_LLVM_PATCH_SERIES "")
+
+    message("${NUM_PATCHES} patches will be applied for libelf to be built by LLVM toolchain.")
+    fetch_patches(${PATCH_NAME} ${PATCH_PATH} ${LIBELF_LLVM_PATCH_URL} ${LIBELF_LLVM_PATCH_CHECKSUM})
+    prepare_patch_series("${LIBELF_LLVM_PATCH_SERIES}" ${PATCH_PATH})
+    set(LIBELF_LLVM_PATCH_COMMAND "(QUILT_PATCHES=${PATCH_PATH} quilt push -a || [[ $? -eq 2 ]])")
+  endif()
+  set(${patch_command} "${LIBELF_LLVM_PATCH_COMMAND}" PARENT_SCOPE)
+endfunction(prepare_bcc_patches patch_command)

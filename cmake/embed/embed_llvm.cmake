@@ -131,32 +131,11 @@ set(LLVM_CONFIGURE_FLAGS   -Wno-dev
                            -DLLVM_APPEND_VC_REV=OFF
                            )
 
-# TO DO should platform specific config (eg, reading toolchain etc) be done in
-# a helper function?
-if(${TARGET_TRIPLE} MATCHES android)
-  ProcessorCount(nproc)
-  list(APPEND LLVM_CONFIGURE_FLAGS -DCMAKE_TOOLCHAIN_FILE=/opt/android-ndk/build/cmake/android.toolchain.cmake)
-  list(APPEND LLVM_CONFIGURE_FLAGS -DANDROID_ABI=${ANDROID_ABI})
-  list(APPEND LLVM_CONFIGURE_FLAGS -DANDROID_NATIVE_API_LEVEL=${ANDROID_NATIVE_API_LEVEL})
 
-  # LLVMHello doesn't work, but is part of the make all target.
-  # Each target is instead built individually, omitting LLVMHello
-  # A side effet of this is progress is reported per target
-  # FIXME is there a way to trick Make into omitting just LLVMHello? -W maybe?
-  string(REPLACE ";" " " LLVM_MAKE_TARGETS "${LLVM_LIBRARY_TARGETS}" )
-  set(LLVM_BUILD_COMMAND BUILD_COMMAND /bin/bash -c
-                          "${CMAKE_MAKE_PROGRAM} -j${nproc} ${LLVM_MAKE_TARGETS} ")
-
-  # LLVM is smart enough to build llvm-tblgen on its own, so it doesn't need
-  # special handling of cross-compiling like clang does.
-  set(LLVM_INSTALL_COMMAND INSTALL_COMMAND /bin/bash -c
-                         "mkdir -p <INSTALL_DIR>/lib/ <INSTALL_DIR>/bin/ && \
-                          find <BINARY_DIR>/lib/ | grep '\\.a$' | \
-                          xargs -I@ cp @ <INSTALL_DIR>/lib/ && \
-                          ${CMAKE_MAKE_PROGRAM} install-cmake-exports && \
-                          ${CMAKE_MAKE_PROGRAM} install-llvm-headers && \
-                          cp <BINARY_DIR>/NATIVE/bin/llvm-tblgen <INSTALL_DIR>/bin/ ")
-endif()
+llvm_platform_config(LLVM_PATCH_COMMAND
+                    "${LLVM_CONFIGURE_FLAGS}"
+                    LLVM_BUILD_COMMAND
+                    LLVM_INSTALL_COMMAND)
 
 set(LLVM_TARGET_LIBS "")
 foreach(llvm_target IN LISTS LLVM_LIBRARY_TARGETS)

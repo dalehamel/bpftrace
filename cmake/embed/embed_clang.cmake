@@ -6,7 +6,7 @@ include(embed_helpers)
 get_host_triple(HOST_TRIPLE)
 get_target_triple(TARGET_TRIPLE)
 
-# FIXME this should probably be in CMakeList.txt as other things need to know
+# FIXME this should probably be in CMakeList.txt as other things need to know?
 if(NOT "${HOST_TRIPLE}" STREQUAL "${TARGET_TRIPLE}")
   set(CROSS_COMPILING_CLANG ON)
 endif()
@@ -104,34 +104,12 @@ if(EMBED_LLVM)
   list(APPEND CLANG_CONFIGURE_FLAGS  -DLLVM_DIR=${EMBEDDED_LLVM_INSTALL_DIR}/lib/cmake/llvm)
 endif()
 
-if(${TARGET_TRIPLE} MATCHES android)
-  ProcessorCount(nproc)
-
-  if(EMBED_LIBCLANG_ONLY)
-    message(FATAL_ERROR "Cannot set EMBED_LIBCLANG_ONLY on Android.")
-  endif()
-
-  # FIXME incompatible with libclang_only (can't do when cross compiling right now)
-
-  list(APPEND CLANG_CONFIGURE_FLAGS -DCMAKE_TOOLCHAIN_FILE=/opt/android-ndk/build/cmake/android.toolchain.cmake)
-  list(APPEND CLANG_CONFIGURE_FLAGS -DANDROID_ABI=${ANDROID_ABI})
-  list(APPEND CLANG_CONFIGURE_FLAGS -DANDROID_NATIVE_API_LEVEL=${ANDROID_NATIVE_API_LEVEL})
-  list(APPEND CLANG_CONFIGURE_FLAGS -DCMAKE_CROSSCOMPILING=True)
-
-  string(REPLACE ";" " " CLANG_MAKE_TARGETS "${CLANG_LIBRARY_TARGETS}" )
-  set(CLANG_BUILD_COMMAND BUILD_COMMAND /bin/bash -c
-                                            "${CMAKE_MAKE_PROGRAM} -j${nproc} ${CLANG_MAKE_TARGETS}")
-  #set(CLANG_INSTALL_COMMAND INSTALL_COMMAND /bin/bash -c
-  #                                           "mkdir -p <INSTALL_DIR>/lib/ && \
-  #                                           find <BINARY_DIR>/lib/ | \
-  #                                           grep '\\.a$' | \
-  #                                           xargs -I@ cp @ <INSTALL_DIR>/lib/")
-endif()
-
 if(${CROSS_COMPILING_CLANG})
   ProcessorCount(nproc)
 
-  # If cross-compling, a host architecture clang-tblgen is needed
+  # If cross-compling, a host architecture clang-tblgen is needed, and not
+  # provided by standard packages. Unlike LLVM, clang isn't smart enough to
+  # bootstrap this for itself
   ExternalProject_Add(embedded_clang_host
     URL "${CLANG_DOWNLOAD_URL}"
     URL_HASH "${CLANG_URL_CHECKSUM}"
@@ -148,6 +126,11 @@ if(${CROSS_COMPILING_CLANG})
 
   list(APPEND CLANG_CONFIGURE_FLAGS -DCLANG_TABLEGEN=${CLANG_TBLGEN_PATH})
 endif()
+
+clang_platform_config(CLANG_PATCH_COMMAND
+                     "${CLANG_CONFIGURE_FLAGS}"
+                      CLANG_BUILD_COMMAND
+                      CLANG_INSTALL_COMMAND)
 
 set(CLANG_TARGET_LIBS "")
 foreach(clang_target IN LISTS CLANG_LIBRARY_TARGETS)

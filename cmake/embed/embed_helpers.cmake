@@ -1,6 +1,7 @@
 include(ExternalProject)
 include(ProcessorCount)
 include(embed_patches)
+include(embed_platforms)
 
 # Detect the distribution bpftrace is being built on
 function(detect_host_os os_id)
@@ -53,7 +54,6 @@ function(get_target_triple out)
   elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Android")
     set(vendor "android")
     set(os "linux")
-    message(AUTHOR_WARNING "Android build not yet fully implemented.")
   else()
     message(AUTHOR_WARNING "The target system ${CMAKE_SYSTEM_NAME} isn't supported")
   endif()
@@ -61,6 +61,36 @@ function(get_target_triple out)
   set(${out} ${triple} PARENT_SCOPE)
   message(STATUS "Detected target triple: ${triple}")
 endfunction()
+
+# If an external dependency doesn't use cmake, it cannot use the toolchain file
+# To substitute for this, the toolchain is exported via standard env vars
+function(get_toolchain_exports out)
+
+# FIXME have a switch detecting if android
+ # https://developer.android.com/ndk/guides/other_build_systems#autoconf
+# FIXME make this a switch based on x86_64, aarch64, and arm7-a
+
+  # FIXME use env var for toolchain home
+  set(CROSS_EXPORTS "export TOOLCHAIN=/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64 && \
+                     export AR=$TOOLCHAIN/bin/arm-linux-androideabi-ar && \
+                     export AS=$TOOLCHAIN/bin/arm-linux-androideabi-as && \
+                     export CC=$TOOLCHAIN/bin/armv7a-linux-androideabi28-clang && \
+                     export CXX=$TOOLCHAIN/bin/armv7a-linux-androideabi28-clang++ && \
+                     export LD=$TOOLCHAIN/bin/arm-linux-androideabi-ld && \
+                     export RANLIB=$TOOLCHAIN/bin/arm-linux-androideabi-ranlib && \
+                     export STRIP=$TOOLCHAIN/bin/arm-linux-androideabi-strip"
+                   )
+
+  set(${out} "${CROSS_EXPORT}" PARENT_SCOPE)
+endfunction(get_toolchain_exports out)
+
+function(get_android_cross_tuple out)
+
+#armeabi-v7a armv7a-linux-androideabi
+#arm64-v8a aarch64-linux-android
+#x86 i686-linux-android
+#x86-64  x86_64-linux-android
+endfunction(get_android_cross_tuple out)
 
 function(fix_llvm_linkflags targetProperty propertyValue)
   set_target_properties(${target_property} PROPERTIES

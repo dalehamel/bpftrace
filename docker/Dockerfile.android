@@ -2,7 +2,6 @@ FROM ubuntu:bionic
 
 ENV ANDROID_NDK_HOME /opt/android-ndk
 ARG ANDROID_NDK_VERSION=r21-beta2
-#ARG ANDROID_NDK_VERSION=r20
 ENV ANDROID_NDK_VERSION=$ANDROID_NDK_VERSION
 
 # Needed to build host clang-tblgen when cross-compiling
@@ -35,28 +34,14 @@ RUN apt-get update && apt-get install -y \
 RUN mkdir /opt/android-ndk-tmp && \
     cd /opt/android-ndk-tmp && \
     wget -q https://dl.google.com/android/repository/android-ndk-${ANDROID_NDK_VERSION}-linux-x86_64.zip && \
-# uncompress
     unzip -q android-ndk-${ANDROID_NDK_VERSION}-linux-x86_64.zip && \
-# move to its final location
     mv ./android-ndk-${ANDROID_NDK_VERSION} ${ANDROID_NDK_HOME} && \
-# remove temp dir
     cd ${ANDROID_NDK_HOME} && \
     rm -rf /opt/android-ndk-tmp
 
 # add to PATH
 ENV PATH ${PATH}:${ANDROID_NDK_HOME}
 ENV PATH ${PATH}:opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/
-
-#RUN mkdir -p /src && git clone https://github.com/iovisor/bcc /src/bcc
-#WORKDIR /src/bcc
-#
-#RUN git reset --hard $bcc_ref && mkdir build && cd build && \
-#    cmake -DCMAKE_INSTALL_PREFIX=/usr/local ../ && make -j$(nproc) && \
-#    make install &&  mkdir -p /usr/local/lib && \
-#    cp src/cc/libbcc.a /usr/local/lib/libbcc.a && \
-#    cp src/cc/libbcc-loader-static.a /usr/local/lib/libbcc-loader-static.a && \
-#    cp ./src/cc/libbcc_bpf.a /usr/local/lib/libbpf.a
-
 
 COPY build.sh /build.sh
 RUN chmod 755 /build.sh
