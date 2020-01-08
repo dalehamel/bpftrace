@@ -6,33 +6,21 @@ include(embed_helpers)
 set(GNULIB_DOWNLOAD_URL "http://git.savannah.gnu.org/gitweb/?p=gnulib.git&a=snapshot&h=cd46bf0ca5083162f3ac564ebbdeb6371085df45&sf=tgz")
 set(GNULIB_CHECKSUM "SHA256=b355951d916eda73f0e7fb9d828623c09185b6624073492d7de88726c6aa6753")
 
-# SEE
-# https://developer.android.com/ndk/guides/other_build_systems
-
-# https://developer.android.com/ndk/guides/other_build_systems#autoconf
-# FIXME these vary by target arch, move this to a helper function
-set(CROSS_EXPORTS "export TOOLCHAIN=/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64 && \
-                   export AR=$TOOLCHAIN/bin/arm-linux-androideabi-ar && \
-                   export AS=$TOOLCHAIN/bin/arm-linux-androideabi-as && \
-                   export CC=$TOOLCHAIN/bin/armv7a-linux-androideabi28-clang && \
-                   export CXX=$TOOLCHAIN/bin/armv7a-linux-androideabi28-clang++ && \
-                   export LD=$TOOLCHAIN/bin/arm-linux-androideabi-ld && \
-                   export RANLIB=$TOOLCHAIN/bin/arm-linux-androideabi-ranlib && \
-                   export STRIP=$TOOLCHAIN/bin/arm-linux-androideabi-strip"
-                   )
-
 # FIXME still need to shim this in
 set(ARGP_HEADER_HACK "\
-#ifndef ARGP_EI \
-#  define ARGP_EI inline \
-#endif \
+#ifndef ARGP_EI\n\
+#  define ARGP_EI inline\n\
+#endif\n\
  \
 // since ece81a73b64483a68f5157420836d84beb3a1680 argp.h as distributed with \
 // gnulib requires _GL_INLINE_HEADER_BEGIN macro to be defined. \
-#ifndef _GL_INLINE_HEADER_BEGIN \
-#  define _GL_INLINE_HEADER_BEGIN \
-#  define _GL_INLINE_HEADER_END \
-#endif")
+#ifndef _GL_INLINE_HEADER_BEGIN\n\
+#  define _GL_INLINE_HEADER_BEGIN\n\
+#  define _GL_INLINE_HEADER_END\n\
+#endif\n")
+
+# Patch for argp header here
+# Actually this isn't necessary if we do michal's approach and just install the header under a different name, and include this file?
 
 ExternalProject_Add(embedded_gnulib
   URL "${GNULIB_DOWNLOAD_URL}"
@@ -56,66 +44,19 @@ set(ELFUTILS_VERSION 0.176)
 set(ELFUTILS_DOWNLOAD_URL "http://sourceware.org/pub/elfutils/${ELFUTILS_VERSION}/elfutils-${ELFUTILS_VERSION}.tar.bz2")
 set(ELFUTILS_CHECKSUM "SHA256=eb5747c371b0af0f71e86215a5ebb88728533c3a104a43d4231963f308cd1023")
 
-# FIXME have a check that determines if toolchain is clang, and if so applies patch
-# To get it to compile by getting rid of inline function definitions
 
-# TO DO if compiler is clang, patch configure
-# Needs:
-# - Patch configure to ignore gnu99 requirement
-# - Get rid of -Wtrampoline from makefile.in (sed?)
-# - Change fallthrough 5 to just fallthrough
-# - Define fallthhrough macro somewhere https://infektor.net/posts/2017-01-19-using-cpp17-attributes-today.html#using-the-fallthrough-attribute
-#
-# CFLAGS fixes:
-# include dir for argp
-# argp header hack
-# -D definition hack
-# LDFLAGS fixes:
-# library dir for argp
-#
-
-set(LIBINTL_H_HACK "\n\
-#ifndef LIBINTL_H \n\
-#define LIBINTL_H \n\
- \
-// libintl.h is included in a lot of sources in efutils, but provided \n\
-// functionalities are not really necessary. Because of that we follow \n\
-// the AOSP example and provide a fake header turning some functions into \n\
-// nops with macros \n\
- \n\
-#define gettext(x)      (x) \n\
-#define dgettext(x,y)   (y) \n\
- \n\
-#endif")
-file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/embedded_libelf-prefix/build_include/libintl.h "${LIBINTL_H_HACK}")
-
-set(ELFUTILS_CROSS_EXPORTS "${CROSS_EXPORTS} && \
-                            export LDFLAGS=-L${EMBEDDED_GNULIB_INSTALL_DIR}/lib && \
-                            export CFLAGS=-I${EMBEDDED_GNULIB_INSTALL_DIR}/include && \
-                            export CFLAGS=\"$CFLAGS -I<INSTALL_DIR>/build_include\" && \
-                            export CFLAGS=\"$CFLAGS -Dprogram_invocation_short_name=\\\\\\\"no-program_invocation_short_name\\\\\\\"\"")
-                                                                                    # OH MY GOD SO MUCH ESCAPING
-# This makes the build system compatible with clang by:
-# - Removing the GNU99 check from configure
-# - Getting rid of -Wtrampolines since there are no nested functions anyways
-# - Changing fallthrough warning
-set(ELFUTILS_PATCH_COMMAND PATCH_COMMAND /bin/bash -c
-                                        "sed -i -e '5010,5056d' <SOURCE_DIR>/configure &&\
-                                         sed -i 's/-Wtrampolines//g' <SOURCE_DIR>/lib/Makefile.in &&\
-                                         sed -i 's/-Wimplicit-fallthrough=5/-Wimplicit-fallthrough/g' <SOURCE_DIR>/lib/Makefile.in &&\
-                                         sed -i 's/-Wtrampolines//g' <SOURCE_DIR>/libelf/Makefile.in &&\
-                                         sed -i 's/-Wimplicit-fallthrough=5/-Wimplicit-fallthrough/g' <SOURCE_DIR>/libelf/Makefile.in")
+libelf_platform_config(LIBELF_PATCH_COMMAND
+                       LIBELF_CONFIGURE_COMMAND
+                       LIBELF_BUILD_COMMAND
+                       LIBELF_INSTALL_COMMAND)
 
 ExternalProject_Add(embedded_libelf
   URL "${ELFUTILS_DOWNLOAD_URL}"
   URL_HASH "${ELFUTILS_CHECKSUM}"
-  ${ELFUTILS_PATCH_COMMAND}
-  CONFIGURE_COMMAND /bin/bash -xc "${ELFUTILS_CROSS_EXPORTS} && \
-                                  cd <BINARY_DIR> && \
-                                  <SOURCE_DIR>/configure --host armv7a-linux-androideabi --prefix <INSTALL_DIR>/usr"
-  BUILD_COMMAND /bin/bash -c "cd <BINARY_DIR>/lib && make -j${nproc} && \
-                              cd <BINARY_DIR>/libelf && make -j${nproc}"
-  INSTALL_COMMAND /bin/bash -c "cd libelf && make install"
+  ${LIBELF_PATCH_COMMAND}
+  ${LIBELF_CONFIGURE_COMMAND}
+  ${LIBELF_BUILD_COMMAND}
+  ${LIBELF_INSTALL_COMMAND}
   UPDATE_DISCONNECTED 1
   DOWNLOAD_NO_PROGRESS 1
 )
