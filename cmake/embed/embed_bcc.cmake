@@ -43,7 +43,7 @@ if(${TARGET_TRIPLE} MATCHES android)
            mkdir -p <INSTALL_DIR>/lib <INSTALL_DIR>/include/bcc && \
            mkdir -p <INSTALL_DIR>/include/bcc/compat/linux  && \
            cp <BINARY_DIR>/src/cc/libbcc.a <INSTALL_DIR>/lib && \
-           cp <BINARY_DIR>/src/cc/libbcc_bpf.a <INSTALL_DIR>/lib && \
+           cp <BINARY_DIR>/src/cc/libbcc_bpf.a <INSTALL_DIR>/lib/libbpf.a && \
            cp <BINARY_DIR>/src/cc/libbcc-loader-static.a <INSTALL_DIR>/lib && \
            cp <SOURCE_DIR>/src/cc/libbpf.h <INSTALL_DIR>/include/bcc && \
            cp <SOURCE_DIR>/src/cc/perf_reader.h <INSTALL_DIR>/include/bcc && \
@@ -56,6 +56,7 @@ if(${TARGET_TRIPLE} MATCHES android)
            cp <SOURCE_DIR>/src/cc/bcc_syms.h <INSTALL_DIR>/include/bcc && \
            cp <SOURCE_DIR>/src/cc/bcc_proc.h <INSTALL_DIR>/include/bcc && \
            cp <SOURCE_DIR>/src/cc/bcc_elf.h <INSTALL_DIR>/include/bcc && \
+           cp <SOURCE_DIR>/src/cc/bcc_usdt.h <INSTALL_DIR>/include/bcc && \
            cp <SOURCE_DIR>/src/cc/libbpf/include/uapi/linux/*.h <INSTALL_DIR>/include/bcc/compat/linux")
 
   if(EMBED_FLEX)

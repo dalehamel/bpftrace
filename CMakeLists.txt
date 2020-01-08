@@ -82,46 +82,6 @@ get_target_triple(TARGET_TRIPLE)
 if(${TARGET_TRIPLE} MATCHES android)
   message("Skipping deps because android for now")
 else()
-
-# Flex and Bison seem to just be built-time dependencies for the binary
-# They likely just set a variable that is used to find the path of each executable
-# which is all we need to override
-# Perhaps this can be done with HINTS or PATHS https://cmake.org/cmake/help/latest/command/find_package.html
-# Actually, it looks like they are in the HOST format?
-  find_package(BISON REQUIRED)
-  find_package(FLEX REQUIRED)
-  bison_target(bison_parser src/parser.yy ${CMAKE_BINARY_DIR}/parser.tab.cc VERBOSE)
-  flex_target(flex_lexer src/lexer.l ${CMAKE_BINARY_DIR}/lex.yy.cc)
-  add_flex_bison_dependency(flex_lexer bison_parser)
-  add_library(parser ${BISON_bison_parser_OUTPUTS} ${FLEX_flex_lexer_OUTPUTS})
-  target_compile_options(parser PRIVATE "-w")
-  target_include_directories(parser PUBLIC src src/ast ${CMAKE_BINARY_DIR})
-  
-  include(CheckSymbolExists)
-  set(CMAKE_REQUIRED_DEFINITIONS -D_GNU_SOURCE)
-  check_symbol_exists(name_to_handle_at "sys/types.h;sys/stat.h;fcntl.h" HAVE_NAME_TO_HANDLE_AT)
-  set(CMAKE_REQUIRED_DEFINITIONS)
-  
-  if(POLICY CMP0075)
-    cmake_policy(SET CMP0075 NEW)
-  endif()
-  set(CMAKE_REQUIRED_LIBRARIES bcc)
-  get_filename_component(LIBBCC_LIBDIR ${LIBBCC_LIBRARIES} DIRECTORY)
-  set(CMAKE_REQUIRED_LINK_OPTIONS -L${LIBBCC_LIBDIR})
-  
-  check_symbol_exists(bcc_prog_load "${LIBBCC_INCLUDE_DIRS}/libbpf.h" HAVE_BCC_PROG_LOAD)
-  check_symbol_exists(bcc_create_map "${LIBBCC_INCLUDE_DIRS}/libbpf.h" HAVE_BCC_CREATE_MAP)
-  check_symbol_exists(bcc_elf_foreach_sym "${LIBBCC_INCLUDE_DIRS}/bcc_elf.h" HAVE_BCC_ELF_FOREACH_SYM)
-  set(CMAKE_REQUIRED_LIBRARIES)
-  set(CMAKE_REQUIRED_LINK_OPTIONS)
-  
-  include(CheckTypeSize)
-  set(CMAKE_EXTRA_INCLUDE_FILES linux/bpf.h)
-  # This will set HAVE_GET_CURRENT_CGROUP_ID to TRUE or FALSE
-  check_type_size("BPF_FUNC_get_current_cgroup_id" GET_CURRENT_CGROUP_ID LANGUAGE C)
-  check_type_size("BPF_FUNC_send_signal" SEND_SIGNAL LANGUAGE C)
-  set(CMAKE_EXTRA_INCLUDE_FILES)
-  
   find_package(LibBpf)
   find_package(LibBfd) # From binutils, android llvm toolchain uses 2.27 so lets try those sources https://ftp.gnu.org/gnu/binutils/binutils-2.27.tar.gz
   find_package(LibOpcodes)
@@ -164,6 +124,7 @@ endif()
 
 if(EMBED_LIBELF)
   include(embed_libelf)
+  set(LIBELF_LIBRARIES "${EMBEDDED_LIBELF_INSTALL_DIR}/usr/lib/libelf.a")
 else()
   find_package(LibElf REQUIRED)
   include_directories(SYSTEM ${LIBELF_INCLUDE_DIRS})
@@ -175,23 +136,72 @@ if(EMBED_BCC)
   # and set hint path?
   #include(embed_flex)
   include(embed_bcc)
+  set(LIBBCC_INCLUDE_DIRS "${EMBEDDED_BCC_INSTALL_DIR}/include/bcc")
+  set(LIBBCC_LIBRARIES "${EMBEDDED_BCC_INSTALL_DIR}/lib/libbcc.a")
+  set(LIBBPF_LIBRARY_STATIC "${EMBEDDED_BCC_INSTALL_DIR}/lib/libbpf.a")
+  set(LIBBCC_LOADER_LIBRARY_STATIC "${EMBEDDED_BCC_INSTALL_DIR}/lib/libbcc-loader-static.a")
+  include_directories(SYSTEM ${LIBBCC_INCLUDE_DIRS})
 else()
   find_package(LibBcc REQUIRED)
   include_directories(SYSTEM ${LIBBCC_INCLUDE_DIRS})
 endif()
 
-if(${TARGET_TRIPLE} MATCHES android)
-  message("Skipping sources because android for now, until the deps are built")
-else()
+# Flex and Bison seem to just be built-time dependencies for the binary
+# They likely just set a variable that is used to find the path of each executable
+# which is all we need to override
+# Perhaps this can be done with HINTS or PATHS https://cmake.org/cmake/help/latest/command/find_package.html
+# Actually, it looks like they are in the HOST format?
+find_package(BISON REQUIRED)
+find_package(FLEX REQUIRED)
+bison_target(bison_parser src/parser.yy ${CMAKE_BINARY_DIR}/parser.tab.cc VERBOSE)
+flex_target(flex_lexer src/lexer.l ${CMAKE_BINARY_DIR}/lex.yy.cc)
+add_flex_bison_dependency(flex_lexer bison_parser)
+add_library(parser ${BISON_bison_parser_OUTPUTS} ${FLEX_flex_lexer_OUTPUTS})
+target_compile_options(parser PRIVATE "-w")
+target_include_directories(parser PUBLIC src src/ast ${CMAKE_BINARY_DIR})
 
-  add_subdirectory(src/arch)
-  add_subdirectory(src/ast)
-  add_subdirectory(src)
-  if (BUILD_TESTING)
-    add_subdirectory(tests)
-  endif()
-  add_subdirectory(resources)
-  add_subdirectory(tools)
-  add_subdirectory(man)
+include(CheckSymbolExists)
+set(CMAKE_REQUIRED_DEFINITIONS -D_GNU_SOURCE)
+check_symbol_exists(name_to_handle_at "sys/types.h;sys/stat.h;fcntl.h" HAVE_NAME_TO_HANDLE_AT)
+set(CMAKE_REQUIRED_DEFINITIONS)
 
+if(POLICY CMP0075)
+  cmake_policy(SET CMP0075 NEW)
 endif()
+set(CMAKE_REQUIRED_LIBRARIES bcc)
+get_filename_component(LIBBCC_LIBDIR ${LIBBCC_LIBRARIES} DIRECTORY)
+set(CMAKE_REQUIRED_LINK_OPTIONS -L${LIBBCC_LIBDIR})
+
+check_symbol_exists(bcc_prog_load "${LIBBCC_INCLUDE_DIRS}/libbpf.h" HAVE_BCC_PROG_LOAD)
+check_symbol_exists(bcc_create_map "${LIBBCC_INCLUDE_DIRS}/libbpf.h" HAVE_BCC_CREATE_MAP)
+check_symbol_exists(bcc_elf_foreach_sym "${LIBBCC_INCLUDE_DIRS}/bcc_elf.h" HAVE_BCC_ELF_FOREACH_SYM)
+
+set(HAVE_BCC_PROG_LOAD ON)
+set(HAVE_BCC_CREATE_MAP ON)
+set(HAVE_BCC_ELF_FOREACH ON)
+#message(FATAL_ERROR "HAVE_BCC_CREATE_MAP ${HAVE_BCC_CREATE_MAP}")
+set(CMAKE_REQUIRED_LIBRARIES)
+set(CMAKE_REQUIRED_LINK_OPTIONS)
+
+include(CheckTypeSize)
+set(CMAKE_EXTRA_INCLUDE_FILES linux/bpf.h)
+# This will set HAVE_GET_CURRENT_CGROUP_ID to TRUE or FALSE
+check_type_size("BPF_FUNC_get_current_cgroup_id" GET_CURRENT_CGROUP_ID LANGUAGE C)
+check_type_size("BPF_FUNC_send_signal" SEND_SIGNAL LANGUAGE C)
+set(CMAKE_EXTRA_INCLUDE_FILES)
+
+#if(${TARGET_TRIPLE} MATCHES android)
+#  message("Skipping sources because android for now, until the deps are built")
+#else()
+
+add_subdirectory(src/arch)
+add_subdirectory(src/ast)
+add_subdirectory(src)
+if (BUILD_TESTING)
+  add_subdirectory(tests)
+endif()
+add_subdirectory(resources)
+add_subdirectory(tools)
+add_subdirectory(man)
+
+#endif()
