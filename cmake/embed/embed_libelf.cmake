@@ -21,6 +21,7 @@ set(CROSS_EXPORTS "export TOOLCHAIN=/opt/android-ndk/toolchains/llvm/prebuilt/li
                    export STRIP=$TOOLCHAIN/bin/arm-linux-androideabi-strip"
                    )
 
+# FIXME still need to shim this in
 set(ARGP_HEADER_HACK "\
 #ifndef ARGP_EI \
 #  define ARGP_EI inline \
@@ -111,7 +112,7 @@ ExternalProject_Add(embedded_libelf
   ${ELFUTILS_PATCH_COMMAND}
   CONFIGURE_COMMAND /bin/bash -xc "${ELFUTILS_CROSS_EXPORTS} && \
                                   cd <BINARY_DIR> && \
-                                  <SOURCE_DIR>/configure --host armv7a-linux-androideabi --prefix <INSTALL_DIR>"
+                                  <SOURCE_DIR>/configure --host armv7a-linux-androideabi --prefix <INSTALL_DIR>/usr"
   BUILD_COMMAND /bin/bash -c "cd <BINARY_DIR>/lib && make -j${nproc} && \
                               cd <BINARY_DIR>/libelf && make -j${nproc}"
   INSTALL_COMMAND /bin/bash -c "cd libelf && make install"

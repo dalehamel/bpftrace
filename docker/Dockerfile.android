@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y \
       automake \
       build-essential \
       cmake \
+      git \
       unzip \
       libz-dev \
       llvm-${LLVM_VERSION} \

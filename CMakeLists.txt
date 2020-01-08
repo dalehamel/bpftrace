@@ -77,23 +77,6 @@ endif(STATIC_LINKING)
 
 set(FIND_LIBRARY_USE_LIB64_PATHS TRUE)
 
-if(EMBED_LIBELF)
-  include(embed_libelf)
-else()
-  find_package(LibElf REQUIRED)
-  include_directories(SYSTEM ${LIBELF_INCLUDE_DIRS})
-endif()
-
-if(EMBED_BCC)
-
-  # IF cross compiling, include flex?
-  # and set hint path?
-  #include(embed_flex)
-  include(embed_bcc)
-else()
-  find_package(LibBcc REQUIRED)
-  include_directories(SYSTEM ${LIBBCC_INCLUDE_DIRS})
-endif()
 
 get_target_triple(TARGET_TRIPLE)
 if(${TARGET_TRIPLE} MATCHES android)
@@ -177,6 +160,24 @@ if(EMBED_CLANG)
 else()
   find_package(Clang REQUIRED)
   include_directories(SYSTEM ${CLANG_INCLUDE_DIRS})
+endif()
+
+if(EMBED_LIBELF)
+  include(embed_libelf)
+else()
+  find_package(LibElf REQUIRED)
+  include_directories(SYSTEM ${LIBELF_INCLUDE_DIRS})
+endif()
+
+if(EMBED_BCC)
+
+  # IF cross compiling, include flex?
+  # and set hint path?
+  #include(embed_flex)
+  include(embed_bcc)
+else()
+  find_package(LibBcc REQUIRED)
+  include_directories(SYSTEM ${LIBBCC_INCLUDE_DIRS})
 endif()
 
 if(${TARGET_TRIPLE} MATCHES android)

@@ -121,11 +121,11 @@ if(${TARGET_TRIPLE} MATCHES android)
   string(REPLACE ";" " " CLANG_MAKE_TARGETS "${CLANG_LIBRARY_TARGETS}" )
   set(CLANG_BUILD_COMMAND BUILD_COMMAND /bin/bash -c
                                             "${CMAKE_MAKE_PROGRAM} -j${nproc} ${CLANG_MAKE_TARGETS}")
-  set(CLANG_INSTALL_COMMAND INSTALL_COMMAND /bin/bash -c
-                                             "mkdir -p <INSTALL_DIR>/lib/ && \
-                                             find <BINARY_DIR>/lib/ | \
-                                             grep '\\.a$' | \
-                                             xargs -I@ cp @ <INSTALL_DIR>/lib/")
+  #set(CLANG_INSTALL_COMMAND INSTALL_COMMAND /bin/bash -c
+  #                                           "mkdir -p <INSTALL_DIR>/lib/ && \
+  #                                           find <BINARY_DIR>/lib/ | \
+  #                                           grep '\\.a$' | \
+  #                                           xargs -I@ cp @ <INSTALL_DIR>/lib/")
 endif()
 
 if(${CROSS_COMPILING_CLANG})
