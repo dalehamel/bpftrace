@@ -64,6 +64,8 @@ if(STATIC_LINKING)
   if(STATIC_LIBC)
     set(CMAKE_EXE_LINKER_FLAGS "-static")
   elseif(EMBED_LLVM OR EMBED_CLANG)
+    # FIXME clang needs -Wl,--end-group appended after the last library
+    # also don't append rt or pthread on android for bionic libc
     set(EMBEDDED_LINK_FLAGS "-static-libgcc -static-libstdc++ -Wl,--start-group")
     set(EMBEDDED_LINK_FLAGS "${EMBEDDED_LINK_FLAGS} -Wl,-Bdynamic -lrt")
     set(EMBEDDED_LINK_FLAGS "${EMBEDDED_LINK_FLAGS} -Wl,-Bdynamic -lpthread")
@@ -79,22 +81,6 @@ set(FIND_LIBRARY_USE_LIB64_PATHS TRUE)
 
 
 get_target_triple(TARGET_TRIPLE)
-if(${TARGET_TRIPLE} MATCHES android)
-  message("Skipping deps because android for now")
-else()
-  find_package(LibBpf)
-  find_package(LibBfd) # From binutils, android llvm toolchain uses 2.27 so lets try those sources https://ftp.gnu.org/gnu/binutils/binutils-2.27.tar.gz
-  find_package(LibOpcodes)
-  
-  if(${LIBBFD_FOUND} AND ${LIBOPCODES_FOUND})
-    set(HAVE_BFD_DISASM TRUE)
-  endif()
-  
-  include(CheckIncludeFile)
-  check_include_file("sys/sdt.h" HAVE_SYSTEMTAP_SYS_SDT_H)
-
-endif()
-
 if (EMBED_LLVM)
   include(embed_llvm)
 else()
@@ -131,19 +117,24 @@ else()
 endif()
 
 if(EMBED_BCC)
-
-  # IF cross compiling, include flex?
-  # and set hint path?
-  #include(embed_flex)
   include(embed_bcc)
   set(LIBBCC_INCLUDE_DIRS "${EMBEDDED_BCC_INSTALL_DIR}/include/bcc")
   set(LIBBCC_LIBRARIES "${EMBEDDED_BCC_INSTALL_DIR}/lib/libbcc.a")
   set(LIBBPF_LIBRARY_STATIC "${EMBEDDED_BCC_INSTALL_DIR}/lib/libbpf.a")
   set(LIBBCC_LOADER_LIBRARY_STATIC "${EMBEDDED_BCC_INSTALL_DIR}/lib/libbcc-loader-static.a")
   include_directories(SYSTEM ${LIBBCC_INCLUDE_DIRS})
+
+  # Since we are embedding, we know the symbol exists
+  set(HAVE_BCC_PROG_LOAD ON)
+  set(HAVE_BCC_CREATE_MAP ON)
+  set(HAVE_BCC_ELF_FOREACH ON)
 else()
   find_package(LibBcc REQUIRED)
   include_directories(SYSTEM ${LIBBCC_INCLUDE_DIRS})
+
+  check_symbol_exists(bcc_prog_load "${LIBBCC_INCLUDE_DIRS}/libbpf.h" HAVE_BCC_PROG_LOAD)
+  check_symbol_exists(bcc_create_map "${LIBBCC_INCLUDE_DIRS}/libbpf.h" HAVE_BCC_CREATE_MAP)
+  check_symbol_exists(bcc_elf_foreach_sym "${LIBBCC_INCLUDE_DIRS}/bcc_elf.h" HAVE_BCC_ELF_FOREACH_SYM)
 endif()
 
 # Flex and Bison seem to just be built-time dependencies for the binary
@@ -172,14 +163,7 @@ set(CMAKE_REQUIRED_LIBRARIES bcc)
 get_filename_component(LIBBCC_LIBDIR ${LIBBCC_LIBRARIES} DIRECTORY)
 set(CMAKE_REQUIRED_LINK_OPTIONS -L${LIBBCC_LIBDIR})
 
-check_symbol_exists(bcc_prog_load "${LIBBCC_INCLUDE_DIRS}/libbpf.h" HAVE_BCC_PROG_LOAD)
-check_symbol_exists(bcc_create_map "${LIBBCC_INCLUDE_DIRS}/libbpf.h" HAVE_BCC_CREATE_MAP)
-check_symbol_exists(bcc_elf_foreach_sym "${LIBBCC_INCLUDE_DIRS}/bcc_elf.h" HAVE_BCC_ELF_FOREACH_SYM)
 
-set(HAVE_BCC_PROG_LOAD ON)
-set(HAVE_BCC_CREATE_MAP ON)
-set(HAVE_BCC_ELF_FOREACH ON)
-#message(FATAL_ERROR "HAVE_BCC_CREATE_MAP ${HAVE_BCC_CREATE_MAP}")
 set(CMAKE_REQUIRED_LIBRARIES)
 set(CMAKE_REQUIRED_LINK_OPTIONS)
 
@@ -190,9 +174,21 @@ check_type_size("BPF_FUNC_get_current_cgroup_id" GET_CURRENT_CGROUP_ID LANGUAGE 
 check_type_size("BPF_FUNC_send_signal" SEND_SIGNAL LANGUAGE C)
 set(CMAKE_EXTRA_INCLUDE_FILES)
 
-#if(${TARGET_TRIPLE} MATCHES android)
-#  message("Skipping sources because android for now, until the deps are built")
-#else()
+# FIXME these are needed in order to work with BTF, just need to embed the deps
+if(${TARGET_TRIPLE} MATCHES android)
+  message("Skipping remaining deps on android for now")
+else()
+  find_package(LibBpf)
+  find_package(LibBfd) # From binutils, android llvm toolchain uses 2.27 so lets try those sources https://ftp.gnu.org/gnu/binutils/binutils-2.27.tar.gz
+  find_package(LibOpcodes)
+
+  if(${LIBBFD_FOUND} AND ${LIBOPCODES_FOUND})
+    set(HAVE_BFD_DISASM TRUE)
+  endif()
+
+  include(CheckIncludeFile)
+  check_include_file("sys/sdt.h" HAVE_SYSTEMTAP_SYS_SDT_H)
+endif()
 
 add_subdirectory(src/arch)
 add_subdirectory(src/ast)
@@ -203,5 +199,3 @@ endif()
 add_subdirectory(resources)
 add_subdirectory(tools)
 add_subdirectory(man)
-
-#endif()
