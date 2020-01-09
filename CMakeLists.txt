@@ -66,6 +66,7 @@ if(STATIC_LINKING)
   elseif(EMBED_LLVM OR EMBED_CLANG)
     set(EMBEDDED_LINK_FLAGS "-static-libgcc -static-libstdc++ -Wl,--start-group")
 
+    get_target_triple(TARGET_TRIPLE)
     # Bionic libc doesn't have separate libs for these
     if(NOT ${TARGET_TRIPLE} MATCHES android)
       set(EMBEDDED_LINK_FLAGS "${EMBEDDED_LINK_FLAGS} -Wl,-Bdynamic -lrt")
@@ -82,7 +83,6 @@ endif(STATIC_LINKING)
 
 set(FIND_LIBRARY_USE_LIB64_PATHS TRUE)
 
-get_target_triple(TARGET_TRIPLE)
 if (EMBED_LLVM)
   include(embed_llvm)
 else()

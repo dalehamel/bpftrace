@@ -15,6 +15,7 @@ function(libelf_platform_config patch_cmd configure_cmd build_cmd install_cmd)
      )
   set(libelf_install_cmd INSTALL_COMMAND /bin/bash -c "cd libelf && make install")
 
+  get_target_triple(TARGET_TRIPLE)
   if(${TARGET_TRIPLE} MATCHES android)
     # Credit to @michalgr for this header
     set(LIBINTL_H_HACK "\n\
@@ -79,6 +80,7 @@ function(gnulib_platform_config patch_cmd configure_cmd build_cmd install_cmd)
       cp <SOURCE_DIR>/argp_sources/gllib/argp.h <INSTALL_DIR>/include"
      )
 
+  get_target_triple(TARGET_TRIPLE)
   if(${TARGET_TRIPLE} MATCHES android)
     # Credit to @michalgr for this stub header
     set(ARGP_HEADER_WRAPPER "\
@@ -126,8 +128,8 @@ endfunction(gnulib_platform_config patch_cmd configure_cmd build_cmd install_cmd
 
 function(bcc_platform_config patch_cmd configure_flags build_cmd install_cmd)
   ProcessorCount(nproc)
-  get_target_triple(TARGET_TRIPLE)
 
+  get_target_triple(TARGET_TRIPLE)
   if(${TARGET_TRIPLE} MATCHES android)
     ProcessorCount(nproc)
     list(APPEND configure_flags -DCMAKE_FIND_ROOT_PATH=${EMBEDDED_LIBELF_INSTALL_DIR}) # FIXME hardcoded assumptions about these being embedded
@@ -191,6 +193,8 @@ function(bcc_platform_config patch_cmd configure_flags build_cmd install_cmd)
 endfunction(bcc_platform_config patch_cmd configure_cmd build_cmd install_cmd)
 
 function(llvm_platform_config patch_cmd configure_flags build_cmd install_cmd)
+
+  get_target_triple(TARGET_TRIPLE)
   if(${TARGET_TRIPLE} MATCHES android)
     ProcessorCount(nproc)
     list(APPEND configure_flags -DCMAKE_TOOLCHAIN_FILE=/opt/android-ndk/build/cmake/android.toolchain.cmake)
@@ -222,6 +226,7 @@ endfunction(llvm_platform_config patch_cmd configure_flags build_cmd install_cmd
 
 function(clang_platform_config patch_cmd configure_flags build_cmd install_cmd)
 
+  get_target_triple(TARGET_TRIPLE)
   if(${TARGET_TRIPLE} MATCHES android)
     ProcessorCount(nproc)
 

@@ -8,6 +8,7 @@ set(ELFUTILS_DOWNLOAD_URL "http://sourceware.org/pub/elfutils/${ELFUTILS_VERSION
 set(ELFUTILS_CHECKSUM "SHA256=eb5747c371b0af0f71e86215a5ebb88728533c3a104a43d4231963f308cd1023")
 
 # FIXME Maybe check if argp is available and include based on that instead?
+get_target_triple(TARGET_TRIPLE)
 if(${TARGET_TRIPLE} MATCHES android)
   include(embed_gnulib)
 endif()
