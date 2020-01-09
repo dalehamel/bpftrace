@@ -2,6 +2,11 @@
 # In general, these functions should set any necessary overrides for external
 # projects need in order to build successfully for a target platform
 
+# In general, functions here may set or override an external project step for:
+# - Patching the sources
+# - Adding or modifying configure flags, or setting the configure command
+# - Modifying the build command or limiting the build targets
+# - Installing the necessary headers or static libraries to a known prefix
 function(libelf_platform_config patch_cmd configure_cmd build_cmd install_cmd)
   ProcessorCount(nproc)
 
@@ -101,12 +106,13 @@ function(gnulib_platform_config patch_cmd configure_cmd build_cmd install_cmd)
     file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/embedded_gnulib-prefix/include/argp.h "${ARGP_HEADER_WRAPPER}")
 
     get_toolchain_exports(CROSS_EXPORTS)
+    get_android_cross_tuple(ANDROID_CROSS_TRIPLE)
     # Patch for argp header here
     set(gnulib_config_cmd CONFIGURE_COMMAND /bin/bash -xc
         "<SOURCE_DIR>/gnulib-tool --create-testdir --lib='libargp' \
                                   --dir=<SOURCE_DIR>/argp_sources argp && \
         ${CROSS_EXPORTS} && \
-        <SOURCE_DIR>/argp_sources/configure --host armv7a-linux-androideabi \
+        <SOURCE_DIR>/argp_sources/configure --host ${ANDROID_CROSS_TRIPLE} \
                                             --prefix <INSTALL_DIR>" # FIXME hardcoded abi
        ) # extra flags to configure needed
 

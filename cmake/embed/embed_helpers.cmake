@@ -85,18 +85,16 @@ function(get_toolchain_exports out)
 endfunction(get_toolchain_exports out)
 
 function(get_android_cross_tuple out)
-
   set(arch ${CMAKE_SYSTEM_PROCESSOR})
-
   if("${arch}" MATCHES "armv7")
-    #armeabi-v7a
     set(${out} "armv7a-linux-androideabi" PARENT_SCOPE)
+  elseif("${arch}" MATCHES "x86_64")
+    set(${out} "x86_64-linux-android" PARENT_SCOPE)
+  elseif("${arch}" MATCHES "aarch64")
+    set(${out} "aarch64-linux-android" PARENT_SCOPE)
+  else()
+    message(FATAL_ERROR "${arch} doesn't match any supported android ABI")
   endif()
-
-# FIXME other platforms:
-#arm64-v8a aarch64-linux-android
-#x86 i686-linux-android
-#x86-64  x86_64-linux-android
 endfunction(get_android_cross_tuple out)
 
 function(fix_llvm_linkflags targetProperty propertyValue)
@@ -123,12 +121,10 @@ function(fetch_patches patchName patchPath patchURL patchChecksum stripLevel)
     # Can add to this if ladder to support additional patch formats, tar
     # probably catches quit a lot...
     if(patchName MATCHES .*tar.*)
-      message("Extracting ${patchName} to ${patchPath}")
-      message("tar -xpf ${patchPath}/${patchName} --strip-components=3 -C ${patchPath}")
-
       if(NOT ${stripLevel})
         set(stripLevel 0)
       endif()
+      message("Extracting ${patchName} to ${patchPath}, strip level ${stripLevel}")
       execute_process(COMMAND tar -xpf ${patchPath}/${patchName} --strip-components=${stripLevel} -C ${patchPath})
     else()
       message(WARNING "Patch ${patchName} doesn't appear to a tar achive, assuming it is a plaintext patch")
