@@ -173,21 +173,21 @@ check_type_size("BPF_FUNC_get_current_cgroup_id" GET_CURRENT_CGROUP_ID LANGUAGE 
 check_type_size("BPF_FUNC_send_signal" SEND_SIGNAL LANGUAGE C)
 set(CMAKE_EXTRA_INCLUDE_FILES)
 
-#FIXME these are needed in order to work with BTF, just need to embed the deps
-if(${TARGET_TRIPLE} MATCHES android)
-  message("Skipping remaining deps on android for now")
+#find_package(LibBpf) # FIXME is this needed for btf?
+
+if(EMBED_BINUTILS)
+  include(embed_binutils)
 else()
-  find_package(LibBpf)
-  find_package(LibBfd) # From binutils, android llvm toolchain uses 2.27 so lets try those sources https://ftp.gnu.org/gnu/binutils/binutils-2.27.tar.gz
+  find_package(LibBfd)
   find_package(LibOpcodes)
-
-  if(${LIBBFD_FOUND} AND ${LIBOPCODES_FOUND})
-    set(HAVE_BFD_DISASM TRUE)
-  endif()
-
-  include(CheckIncludeFile)
-  check_include_file("sys/sdt.h" HAVE_SYSTEMTAP_SYS_SDT_H)
 endif()
+
+if(${LIBBFD_FOUND} AND ${LIBOPCODES_FOUND})
+  set(HAVE_BFD_DISASM TRUE)
+endif()
+
+include(CheckIncludeFile)
+check_include_file("sys/sdt.h" HAVE_SYSTEMTAP_SYS_SDT_H)
 
 add_subdirectory(src/arch)
 add_subdirectory(src/ast)

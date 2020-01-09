@@ -1,6 +1,7 @@
 if(NOT EMBED_BINUTILS)
   return()
 endif()
+include(embed_helpers)
 
 # The only time binutils should ever need to be embedded is when cross-compiling
 # Have a check that asserts this
@@ -11,29 +12,35 @@ set(BINUTILS_VERSION "2.27") # This is what the android toolchain uses for r21 p
 set(BINUTILS_DOWNLOAD_URL "https://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VERSION}.tar.gz")
 set(BINUTILS_CHECKSUM "SHA256=00a1ee1f389f81e9979f3a640a01c431b3021de0d42278f6508391a2f0b81c9a")
 
-set(BFD_CONFIGURE_COMMAND CONFIGURE_COMMAND /bin/bash -xc "<SOURCE_DIR>/gnulib-tool --create-testdir --lib='libargp' --dir=argp_sources argp && cd <BINARY_DIR> &&  <SOURCE_DIR>/argp_sources/configure")
-set(BFD_BUILD_COMMAND BUILD_COMMAND /bin/bash -c "make -j${nproc}")
-set(BFD_INSTALL_COMMAND INSTALL_COMMAND /bin/bash -c "mkdir -p <INSTALL_DIR>/lib && mkdir -p <INSTALL_DIR>/include && cp <BINARY_DIR>/gllib/libargp.a <INSTALL_DIR>/lib && cp <SOURCE_DIR>/gllib/argp.h <INSTALL_DIR>/include && cp <SOURCE_DIR>/gllib/argp.h <INSTALL_DIR>/include")
+# Only build binutils targets that are explicitly needed
+set(BINUTILS_LIBRARY_TARGETS
+    bfd
+    libiberty
+    opcodes
+   )
 
-ExternalProject_Add(embedded_binutils_bfd
+binutils_platform_config(BINUTILS_PATCH_COMMAND
+                         BINUTILS_CONFIGURE_COMMAND
+                         BINUTILS_BUILD_COMMAND
+                         BINUTILS_INSTALL_COMMAND)
+
+ExternalProject_Add(embedded_binutils
   URL "${BINUTILS_DOWNLOAD_URL}"
   URL_HASH "${BINUTILS_CHECKSUM}"
-  ${BFD_CONFIGURE_COMMAND}
-  ${BFD_BUILD_COMMAND}
-  ${BFD_INSTALL_COMMAND}
+  ${BINUTILS_CONFIGURE_COMMAND}
+  ${BINUTILS_BUILD_COMMAND}
+  ${BINUTILS_INSTALL_COMMAND}
   UPDATE_DISCONNECTED 1
   DOWNLOAD_NO_PROGRESS 1
 )
 
-set(OPCODES_CONFIGURE_COMMAND CONFIGURE_COMMAND /bin/bash -c "")
-set(OPCODES_BUILD_COMMAND BUILD_COMMAND /bin/bash -c "make -j${nproc}")
-set(OPCODES_INSTALL_COMMAND INSTALL_COMMAND /bin/bash -c "mkdir -p <INSTALL_DIR>/lib && mkdir -p <INSTALL_DIR>/include && cp <BINARY_DIR>/gllib/libargp.a <INSTALL_DIR>/lib && cp <SOURCE_DIR>/gllib/argp.h <INSTALL_DIR>/include && cp <SOURCE_DIR>/gllib/argp.h <INSTALL_DIR>/include")
-ExternalProject_Add(embedded_binutils_opcodes
-  URL "${BINUTILS_DOWNLOAD_URL}"
-  URL_HASH "${BINUTILS_CHECKSUM}"
-  ${OPCODES_CONFIGURE_COMMAND}
-  ${OPCODES_BUILD_COMMAND}
-  ${OPCODES_INSTALL_COMMAND}
-  UPDATE_DISCONNECTED 1
-  DOWNLOAD_NO_PROGRESS 1
-)
+ExternalProject_Get_Property(embedded_binutils INSTALL_DIR)
+set(EMBEDDED_BINUTILS_INSTALL_DIR ${INSTALL_DIR})
+
+foreach(binutils_target IN LISTS BINUTILS_LIBRARY_TARGETS)
+  list(APPEND BINUTILS_EMBEDDED_CMAKE_TARGETS ${bcc_target})
+  add_library(${binutils_target} STATIC IMPORTED)
+  set(binutils_target_path "${EMBEDDED_BINUTILS_INSTALL_DIR}/lib/lib${binutils_target}.a")
+  set_property(TARGET ${binutils_target} PROPERTY IMPORTED_LOCATION "${binutils_target_path}")
+  add_dependencies(${binutils_target} embedded_binutils)
+endforeach(bcc_target)

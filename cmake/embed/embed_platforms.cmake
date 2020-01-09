@@ -132,6 +132,41 @@ function(gnulib_platform_config patch_cmd configure_cmd build_cmd install_cmd)
 
 endfunction(gnulib_platform_config patch_cmd configure_cmd build_cmd install_cmd)
 
+function(binutils_platform_config patch_cmd configure_cmd build_cmd install_cmd)
+  get_toolchain_exports(CROSS_EXPORTS)
+  set(binutils_config CONFIGURE_COMMAND /bin/bash -xc
+      "${ELFUTILS_CROSS_EXPORTS} && \
+       mkdir -p <BINARY_DIR>/bfd <BINARY_DIR>/opcodes <BINARY_DIR>/libiberty && \
+       cd <BINARY_DIR>/bfd &&
+       <SOURCE_DIR>/bfd/configure --host ${ANDROID_CROSS_TRIPLE} \
+                                  --prefix <INSTALL_DIR> && \
+       cd <BINARY_DIR>/libiberty &&
+       <SOURCE_DIR>/libiberty/configure --host ${ANDROID_CROSS_TRIPLE} \
+                                  --prefix <INSTALL_DIR> && \
+       cd <BINARY_DIR>/opcodes &&
+       <SOURCE_DIR>/opcodes/configure --host ${ANDROID_CROSS_TRIPLE} \
+                                  --prefix <INSTALL_DIR>"
+     )
+  set(binutils_config_cmd BUILD_COMMAND /bin/bash -c
+      "cd <BINARY_DIR>/bfd && make -j${nproc} && \
+       cd <BINARY_DIR>/libiberty && make -j${nproc} && \
+       cd <BINARY_DIR>/opcodes && make -j${nproc}"
+     )
+  set(binutils_install_cmd INSTALL_COMMAND /bin/bash -c
+      "mkdir -p <INSTALL_DIR>/lib && mkdir -p <INSTALL_DIR>/include && \
+       cp <BINARY_DIR>/bfd/libbfd.a <INSTALL_DIR>/lib && \
+       cp <SOURCE_DIR>/bfd/bfd.h <INSTALL_DIR>/include && \
+       cp <BINARY_DIR>/opcodes/libopcodes.a <INSTALL_DIR>/lib && \
+       cp <SOURCE_DIR>/include/dis-asm.h <INSTALL_DIR>/include && \
+       cp <BINARY_DIR>/libiberty/libiberty.a <INSTALL_DIR>/lib && \
+      "
+     )
+  set(${patch_cmd} "${binutils_patch_cmd}" PARENT_SCOPE)
+  set(${configure_cmd} "${binutils_config_cmd}" PARENT_SCOPE)
+  set(${build_cmd} "${binutils_build_cmd}" PARENT_SCOPE)
+  set(${install_cmd} "${binutils_install_cmd}" PARENT_SCOPE)
+endfunction(binutils_platform_config patch_cmd configure_cmd build_cmd install_cmd)
+
 function(bcc_platform_config patch_cmd configure_flags build_cmd install_cmd)
   ProcessorCount(nproc)
 
