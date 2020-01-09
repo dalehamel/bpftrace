@@ -53,6 +53,11 @@ mkdir -p "$1"
 cd "$1"
 
 if [[ -n "$ANDROID_ABI"  ]];then
+  # https://developer.android.com/ndk/guides/abis
+  # Valid ABIS are:
+  # - armeabi-v7a
+  # - arm64-v8a
+  # - x86_64
   cmake_extra_flags="-DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
                      -DANDROID_ABI=${ANDROID_ABI} -DANDROID_NATIVE_API_LEVEL=28"
 else
@@ -63,7 +68,7 @@ cmake -DCMAKE_BUILD_TYPE="$2" -DWARNINGS_AS_ERRORS:BOOL=$WARNINGS_AS_ERRORS \
       -DSTATIC_LINKING:BOOL=$STATIC_LINKING -DSTATIC_LIBC:BOOL=$STATIC_LIBC \
       -DEMBED_LLVM:BOOL=$EMBED_LLVM -DEMBED_CLANG:BOOL=$EMBED_CLANG \
       -DEMBED_BCC:BOOL=$EMBED_BCC -DEMBED_LIBELF:BOOL=$EMBED_LIBELF \
-      -DEMBED_LIBCLANG_ONLY:BOOL=$EMBED_LIBCLANG_ONLY  "${cmake_extra_flags}" \
+      -DEMBED_LIBCLANG_ONLY:BOOL=$EMBED_LIBCLANG_ONLY  ${cmake_extra_flags} \
       -DLLVM_VERSION=$LLVM_VERSION  ../
 
 shift 2

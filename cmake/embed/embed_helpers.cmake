@@ -66,20 +66,51 @@ endfunction()
 # To substitute for this, the toolchain is exported via standard env vars
 function(get_toolchain_exports out)
 
-# FIXME have a switch detecting if android
- # https://developer.android.com/ndk/guides/other_build_systems#autoconf
-# FIXME make this a switch based on x86_64, aarch64, and arm7-a
+  get_target_triple(TARGET_TRIPLE)
+  if(NOT ${TARGET_TRIPLE} MATCHES android)
+    message(FATAL_ERROR "No cross toolchain exists for non-android platform yet")
+  endif()
 
-  # FIXME use env var for toolchain home
-  set(CROSS_EXPORTS "export TOOLCHAIN=/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64 && \
-                     export AR=$TOOLCHAIN/bin/arm-linux-androideabi-ar && \
-                     export AS=$TOOLCHAIN/bin/arm-linux-androideabi-as && \
-                     export CC=$TOOLCHAIN/bin/armv7a-linux-androideabi28-clang && \
-                     export CXX=$TOOLCHAIN/bin/armv7a-linux-androideabi28-clang++ && \
-                     export LD=$TOOLCHAIN/bin/arm-linux-androideabi-ld && \
-                     export RANLIB=$TOOLCHAIN/bin/arm-linux-androideabi-ranlib && \
-                     export STRIP=$TOOLCHAIN/bin/arm-linux-androideabi-strip"
-                   )
+  set(API_NUM "${ANDROID_NATIVE_API_LEVEL}")
+  set(arch ${CMAKE_SYSTEM_PROCESSOR})
+
+  if("${arch}" MATCHES "armv7")
+    # FIXME use env var for toolchain home
+    set(CROSS_EXPORTS
+        "export TOOLCHAIN=/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64 && \
+        export AR=$TOOLCHAIN/bin/arm-linux-androideabi-ar && \
+        export AS=$TOOLCHAIN/bin/arm-linux-androideabi-as && \
+        export CC=$TOOLCHAIN/bin/armv7a-linux-androideabi${API_NUM}-clang && \
+        export CXX=$TOOLCHAIN/bin/armv7a-linux-androideabi${API_NUM}-clang++ && \
+        export LD=$TOOLCHAIN/bin/arm-linux-androideabi-ld && \
+        export RANLIB=$TOOLCHAIN/bin/arm-linux-androideabi-ranlib && \
+        export STRIP=$TOOLCHAIN/bin/arm-linux-androideabi-strip"
+        )
+  elseif("${arch}" MATCHES "x86_64")
+    set(CROSS_EXPORTS
+        "export TOOLCHAIN=/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64 && \
+        export AR=$TOOLCHAIN/bin/x86_64-linux-android-ar && \
+        export AS=$TOOLCHAIN/bin/x86_64-linux-android-as && \
+        export CC=$TOOLCHAIN/bin/x86_64-linux-android${API_NUM}-clang && \
+        export CXX=$TOOLCHAIN/bin/x86_64-linux-android${API_NUM}-clang++ && \
+        export LD=$TOOLCHAIN/bin/x86_64-linux-android-ld && \
+        export RANLIB=$TOOLCHAIN/bin/x86_64-linux-android-ranlib && \
+        export STRIP=$TOOLCHAIN/bin/x86_64-linux-android-strip"
+        )
+  elseif("${arch}" MATCHES "aarch64")
+    set(CROSS_EXPORTS
+        "export TOOLCHAIN=/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64 && \
+        export AR=$TOOLCHAIN/bin/aarch64-linux-android-ar && \
+        export AS=$TOOLCHAIN/bin/aarch64-linux-android-as && \
+        export CC=$TOOLCHAIN/bin/aarch64-linux-android${API_NUM}-clang && \
+        export CXX=$TOOLCHAIN/bin/aarch64-linux-android${API_NUM}-clang++ && \
+        export LD=$TOOLCHAIN/bin/aarch64-linux-android-ld && \
+        export RANLIB=$TOOLCHAIN/bin/aarch64-linux-android-ranlib && \
+        export STRIP=$TOOLCHAIN/bin/aarch64-linux-android-strip"
+        )
+  else()
+    message(FATAL_ERROR "${arch} doesn't match any supported android ABI")
+  endif()
 
   set(${out} "${CROSS_EXPORTS}" PARENT_SCOPE)
 endfunction(get_toolchain_exports out)
