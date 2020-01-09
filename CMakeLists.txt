@@ -118,7 +118,8 @@ endif()
 
 if(EMBED_BCC)
   include(embed_bcc)
-  include_directories(SYSTEM ${LIBBCC_INCLUDE_DIRS})
+  include_directories(SYSTEM "${EMBEDDED_BCC_INSTALL_DIR}/include")
+  include_directories(SYSTEM "${EMBEDDED_BCC_INSTALL_DIR}/include/bcc")
 
   # Since we are embedding, we know the symbol exists
   set(HAVE_BCC_PROG_LOAD ON)
@@ -131,49 +132,46 @@ else()
   check_symbol_exists(bcc_prog_load "${LIBBCC_INCLUDE_DIRS}/libbpf.h" HAVE_BCC_PROG_LOAD)
   check_symbol_exists(bcc_create_map "${LIBBCC_INCLUDE_DIRS}/libbpf.h" HAVE_BCC_CREATE_MAP)
   check_symbol_exists(bcc_elf_foreach_sym "${LIBBCC_INCLUDE_DIRS}/bcc_elf.h" HAVE_BCC_ELF_FOREACH_SYM)
+
+  set(CMAKE_REQUIRED_LIBRARIES bcc)
+  get_filename_component(LIBBCC_LIBDIR ${LIBBCC_LIBRARIES} DIRECTORY)
+  set(CMAKE_REQUIRED_LINK_OPTIONS -L${LIBBCC_LIBDIR})
+
+  set(CMAKE_REQUIRED_LIBRARIES)
+  set(CMAKE_REQUIRED_LINK_OPTIONS)
 endif()
 
-# FIXME ugh, dependencies not set up properly yet
+# Flex and Bison seem to just be built-time dependencies for the binary
+# They likely just set a variable that is used to find the path of each executable
+# which is all we need to override
+# Perhaps this can be done with HINTS or PATHS https://cmake.org/cmake/help/latest/command/find_package.html
+# Actually, it looks like they are in the HOST format?
+find_package(BISON REQUIRED)
+find_package(FLEX REQUIRED)
+bison_target(bison_parser src/parser.yy ${CMAKE_BINARY_DIR}/parser.tab.cc VERBOSE)
+flex_target(flex_lexer src/lexer.l ${CMAKE_BINARY_DIR}/lex.yy.cc)
+add_flex_bison_dependency(flex_lexer bison_parser)
+add_library(parser ${BISON_bison_parser_OUTPUTS} ${FLEX_flex_lexer_OUTPUTS})
+target_compile_options(parser PRIVATE "-w")
+target_include_directories(parser PUBLIC src src/ast ${CMAKE_BINARY_DIR})
 
+include(CheckSymbolExists)
+set(CMAKE_REQUIRED_DEFINITIONS -D_GNU_SOURCE)
+check_symbol_exists(name_to_handle_at "sys/types.h;sys/stat.h;fcntl.h" HAVE_NAME_TO_HANDLE_AT)
+set(CMAKE_REQUIRED_DEFINITIONS)
 
-# # Flex and Bison seem to just be built-time dependencies for the binary
-# # They likely just set a variable that is used to find the path of each executable
-# # which is all we need to override
-# # Perhaps this can be done with HINTS or PATHS https://cmake.org/cmake/help/latest/command/find_package.html
-# # Actually, it looks like they are in the HOST format?
-# find_package(BISON REQUIRED)
-# find_package(FLEX REQUIRED)
-# bison_target(bison_parser src/parser.yy ${CMAKE_BINARY_DIR}/parser.tab.cc VERBOSE)
-# flex_target(flex_lexer src/lexer.l ${CMAKE_BINARY_DIR}/lex.yy.cc)
-# add_flex_bison_dependency(flex_lexer bison_parser)
-# add_library(parser ${BISON_bison_parser_OUTPUTS} ${FLEX_flex_lexer_OUTPUTS})
-# target_compile_options(parser PRIVATE "-w")
-# target_include_directories(parser PUBLIC src src/ast ${CMAKE_BINARY_DIR})
-# 
-# include(CheckSymbolExists)
-# set(CMAKE_REQUIRED_DEFINITIONS -D_GNU_SOURCE)
-# check_symbol_exists(name_to_handle_at "sys/types.h;sys/stat.h;fcntl.h" HAVE_NAME_TO_HANDLE_AT)
-# set(CMAKE_REQUIRED_DEFINITIONS)
-# 
-# if(POLICY CMP0075)
-#   cmake_policy(SET CMP0075 NEW)
-# endif()
-# set(CMAKE_REQUIRED_LIBRARIES bcc)
-# get_filename_component(LIBBCC_LIBDIR ${LIBBCC_LIBRARIES} DIRECTORY)
-# set(CMAKE_REQUIRED_LINK_OPTIONS -L${LIBBCC_LIBDIR})
-# 
-# 
-# set(CMAKE_REQUIRED_LIBRARIES)
-# set(CMAKE_REQUIRED_LINK_OPTIONS)
-# 
-# include(CheckTypeSize)
-# set(CMAKE_EXTRA_INCLUDE_FILES linux/bpf.h)
-# # This will set HAVE_GET_CURRENT_CGROUP_ID to TRUE or FALSE
-# check_type_size("BPF_FUNC_get_current_cgroup_id" GET_CURRENT_CGROUP_ID LANGUAGE C)
-# check_type_size("BPF_FUNC_send_signal" SEND_SIGNAL LANGUAGE C)
-# set(CMAKE_EXTRA_INCLUDE_FILES)
+if(POLICY CMP0075)
+  cmake_policy(SET CMP0075 NEW)
+endif()
 
-# FIXME these are needed in order to work with BTF, just need to embed the deps
+include(CheckTypeSize)
+set(CMAKE_EXTRA_INCLUDE_FILES linux/bpf.h)
+# This will set HAVE_GET_CURRENT_CGROUP_ID to TRUE or FALSE
+check_type_size("BPF_FUNC_get_current_cgroup_id" GET_CURRENT_CGROUP_ID LANGUAGE C)
+check_type_size("BPF_FUNC_send_signal" SEND_SIGNAL LANGUAGE C)
+set(CMAKE_EXTRA_INCLUDE_FILES)
+
+#FIXME these are needed in order to work with BTF, just need to embed the deps
 if(${TARGET_TRIPLE} MATCHES android)
   message("Skipping remaining deps on android for now")
 else()
@@ -189,16 +187,12 @@ else()
   check_include_file("sys/sdt.h" HAVE_SYSTEMTAP_SYS_SDT_H)
 endif()
 
-if(${TARGET_TRIPLE} MATCHES android)
-  message("Skipping sources until deps are done")
-else()
-  add_subdirectory(src/arch)
-  add_subdirectory(src/ast)
-  add_subdirectory(src)
-  if (BUILD_TESTING)
-    add_subdirectory(tests)
-  endif()
-  add_subdirectory(resources)
-  add_subdirectory(tools)
-  add_subdirectory(man)
+add_subdirectory(src/arch)
+add_subdirectory(src/ast)
+add_subdirectory(src)
+if (BUILD_TESTING)
+  add_subdirectory(tests)
 endif()
+add_subdirectory(resources)
+add_subdirectory(tools)
+add_subdirectory(man)

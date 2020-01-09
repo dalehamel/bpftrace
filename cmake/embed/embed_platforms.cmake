@@ -81,7 +81,7 @@ function(gnulib_platform_config patch_cmd configure_cmd build_cmd install_cmd)
 
   if(${TARGET_TRIPLE} MATCHES android)
     # Credit to @michalgr for this stub header
-    set(ARGP_WRAPPER "\
+    set(ARGP_HEADER_WRAPPER "\
 #ifndef ARGP_WRAPPER_H\n\
 #define ARGP_WRAPPER_H\n\
 #ifndef ARGP_EI\n\
@@ -96,8 +96,9 @@ function(gnulib_platform_config patch_cmd configure_cmd build_cmd install_cmd)
 #include \"argp_real.h\"\n\
 #endif")
 
-    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/embedded_libelf-prefix/include/argp.h "${ARGP_HEADER_HACK}")
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/embedded_gnulib-prefix/include/argp.h "${ARGP_HEADER_WRAPPER}")
 
+    get_toolchain_exports(CROSS_EXPORTS)
     # Patch for argp header here
     set(gnulib_config_cmd CONFIGURE_COMMAND /bin/bash -xc
         "<SOURCE_DIR>/gnulib-tool --create-testdir --lib='libargp' \
@@ -132,6 +133,7 @@ function(bcc_platform_config patch_cmd configure_flags build_cmd install_cmd)
     list(APPEND configure_flags -DCMAKE_FIND_ROOT_PATH=${EMBEDDED_LIBELF_INSTALL_DIR}) # FIXME hardcoded assumptions about these being embedded
     list(APPEND configure_flags -DLLVM_DIR=${EMBEDDED_LLVM_INSTALL_DIR}/lib/cmake/llvm)
     list(APPEND configure_flags -DCLANG_DIR=${EMBEDDED_CLANG_INSTALL_DIR})
+    list(APPEND configure_flags -DEXTRA_INCLUDE_PATHS=${CMAKE_CURRENT_BINARY_DIR}/embedded_bcc-prefix/build_include/)
     list(APPEND configure_flags -DCMAKE_TOOLCHAIN_FILE=/opt/android-ndk/build/cmake/android.toolchain.cmake)
     list(APPEND configure_flags -DANDROID_ABI=${ANDROID_ABI})
     list(APPEND configure_flags -DANDROID_NATIVE_API_LEVEL=${ANDROID_NATIVE_API_LEVEL})
@@ -139,7 +141,7 @@ function(bcc_platform_config patch_cmd configure_flags build_cmd install_cmd)
 
     prepare_bcc_patches(bcc_android_patch_command)
 
-    if("${bcc_android_patch_command}")
+    if(bcc_android_patch_command)
       set(bcc_patch_cmd PATCH_COMMAND /bin/bash -c "${bcc_android_patch_command}")
     endif()
 

@@ -1,5 +1,7 @@
 DELETE ME DONT PR THIS
 
+FIXME tabs are being copied to gist with spaces instead of tabs, ugh
+
 - Get a reproducible build, remaining manual quirks are:
  - argp header, fix this with quilt
  - bcc patches convert from sed to quilt, one for CMakeList, one for linux/types.h
