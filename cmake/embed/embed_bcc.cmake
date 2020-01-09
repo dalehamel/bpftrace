@@ -8,7 +8,7 @@ set(BCC_CHECKSUM "SHA256=a7acf0e7a9d3ca03a91f22590e695655a5f0ccf8e3dc29e454c2e4c
 
 set(BCC_LIBRARY_TARGETS
     bcc
-    bcc-static-loader
+    bcc-loader-static
     bcc_bpf
    )
 

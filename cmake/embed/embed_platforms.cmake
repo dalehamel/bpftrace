@@ -16,7 +16,7 @@ function(libelf_platform_config patch_cmd configure_cmd build_cmd install_cmd)
   set(libelf_install_cmd INSTALL_COMMAND /bin/bash -c "cd libelf && make install")
 
   if(${TARGET_TRIPLE} MATCHES android)
-
+    # Credit to @michalgr for this header
     set(LIBINTL_H_HACK "\n\
 #ifndef LIBINTL_H \n\
 #define LIBINTL_H \n\
