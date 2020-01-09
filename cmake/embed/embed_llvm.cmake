@@ -142,6 +142,8 @@ foreach(llvm_target IN LISTS LLVM_LIBRARY_TARGETS)
   list(APPEND LLVM_TARGET_LIBS "<INSTALL_DIR>/lib/lib${llvm_target}.a")
 endforeach(llvm_target)
 
+message("LLVM CONFIG ${LLVM_CONFIGURE_FLAGS}")
+
 ExternalProject_Add(embedded_llvm
   URL "${LLVM_DOWNLOAD_URL}"
   URL_HASH "${LLVM_URL_CHECKSUM}"

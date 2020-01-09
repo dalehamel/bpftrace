@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y \
       libz-dev \
       llvm-${LLVM_VERSION} \
       python3 \
+      quilt \
       wget
 
 

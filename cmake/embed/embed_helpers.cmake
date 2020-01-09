@@ -81,7 +81,7 @@ function(get_toolchain_exports out)
                      export STRIP=$TOOLCHAIN/bin/arm-linux-androideabi-strip"
                    )
 
-  set(${out} "${CROSS_EXPORT}" PARENT_SCOPE)
+  set(${out} "${CROSS_EXPORTS}" PARENT_SCOPE)
 endfunction(get_toolchain_exports out)
 
 function(get_android_cross_tuple out)
@@ -108,9 +108,9 @@ endfunction(prepare_patch_series patchSeries patchPath)
 
 function(fetch_patches patchName patchPath patchURL patchChecksum)
   if(NOT EXISTS "${patchPath}/${patchName}")
-    message("Downloading ${DEBIAN_PATCH_URL}")
+    message("Downloading ${patchURL}")
     file(MAKE_DIRECTORY ${patchPath})
-    file(DOWNLOAD "${DEBIAN_PATCH_URL}" "${patchPath}/${patchName}"
+    file(DOWNLOAD "${patchURL}" "${patchPath}/${patchName}"
          EXPECTED_HASH SHA256=${patchChecksum})
 
     # Can add to this if ladder to support additional patch formats, tar
