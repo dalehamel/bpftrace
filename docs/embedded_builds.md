@@ -154,6 +154,14 @@ This is the default, and currently only tested and supported.
 bpftrace is built against the glibc from Ubuntu bionic (18.04), which provides
 2.27.
 
+## bionic libc (Android)
+
+Bionic libc is a mix of gnu and BSD, and available for the Android platform of
+Linux.
+
+Using the android NDK, bpftrace can link against bionic libc by cross-compiling
+all dependencies using Clang, which is the toolchain used by the Android NDK.
+
 ## musl (not yet supported)
 
 The original static build of bpftrace built against musl statically, but there

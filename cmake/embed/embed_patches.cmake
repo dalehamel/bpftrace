@@ -68,7 +68,7 @@ function(prepare_bcc_patches patch_command)
   # FIXME maybe check BCC version and bail / warn if not 0.12.0?
   if(${TARGET_TRIPLE} MATCHES android)
     set(BCC_ANDROID_PATCH_URL "https://gist.github.com/dalehamel/da2f73357cd8cc4e60a1218e562a472b/archive/0accba3a1f10956c1323d7c5742e663a4a7c8370.tar.gz")
-    set(BCC_ANDROID_PATCH_CHECKSUM 2b845a5de3cc2d49924b632d3e7a2fca53c55151e586528750ace2cb2aae23db)
+    set(BCC_ANDROID_PATCH_CHECKSUM b711a316ec8209e1a677e43570bbcfadec4ed3953e27ceeb23c501c41bfc86ea)
 
     set(PATCH_NAME "bcc-patches.tar.gz")
     set(PATCH_PATH "${CMAKE_CURRENT_BINARY_DIR}/bcc-android/")
@@ -91,7 +91,7 @@ function(prepare_libelf_patches patch_command)
   # here is android specific, android toolchain just happens to use LLVM
   if(${TARGET_TRIPLE} MATCHES android)
     set(LIBELF_LLVM_PATCH_URL "https://gist.github.com/dalehamel/8fc4d9d25295e86d4347229270f29b48/archive/603ac72b18e242a7f4bd31be39419db3a4bd9a83.tar.gz")
-    set(LIBELF_LLVM_PATCH_CHECKSUM 2b845a5de3cc2d49924b632d3e7a2fca53c55151e586528750ace2cb2aae23db)
+    set(LIBELF_LLVM_PATCH_CHECKSUM c671bdd98e194f3fd6abd2f668406754851aeb1fe3d32b1269ad06906e33911e)
 
     set(PATCH_NAME "libelf-llvm-patches.tar.gz")
     set(PATCH_PATH "${CMAKE_CURRENT_BINARY_DIR}/libelf-llvm/")
@@ -105,4 +105,4 @@ function(prepare_libelf_patches patch_command)
     set(LIBELF_LLVM_PATCH_COMMAND "(QUILT_PATCHES=${PATCH_PATH} quilt push -a || [[ $? -eq 2 ]])")
   endif()
   set(${patch_command} "${LIBELF_LLVM_PATCH_COMMAND}" PARENT_SCOPE)
-endfunction(prepare_bcc_patches patch_command)
+endfunction(prepare_libelf_patches patch_command)

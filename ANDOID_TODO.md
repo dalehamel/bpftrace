@@ -15,6 +15,8 @@ DELETE ME DONT PR THIS
 - Enhancements
  - embed binutils for opcodes / bfd for btf support
 
+- Credit Michal where appropriate
+
 - Get this running in CI
 
 - Get this up for review

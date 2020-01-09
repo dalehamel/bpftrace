@@ -39,7 +39,9 @@ endif()
 # by the all target.
 set(libclang_install_command "mkdir -p <INSTALL_DIR>/lib/ && \
                               cp <BINARY_DIR>/lib/libclang.a <INSTALL_DIR>/lib/libclang.a")
-set(clang_install_command "${CMAKE_MAKE_PROGRAM} install && ${libclang_install_command}") # FIXME work with ninja / detect generator?
+
+ProcessorCount(nproc)
+set(clang_install_command "${CMAKE_MAKE_PROGRAM} -j ${nproc} install && ${libclang_install_command}") # FIXME work with ninja / detect generator?
 set(CLANG_INSTALL_COMMAND INSTALL_COMMAND /bin/bash -c "${clang_install_command}")
 
 if(NOT EMBED_LLVM)
