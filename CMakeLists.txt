@@ -64,11 +64,14 @@ if(STATIC_LINKING)
   if(STATIC_LIBC)
     set(CMAKE_EXE_LINKER_FLAGS "-static")
   elseif(EMBED_LLVM OR EMBED_CLANG)
-    # FIXME clang needs -Wl,--end-group appended after the last library
-    # also don't append rt or pthread on android for bionic libc
     set(EMBEDDED_LINK_FLAGS "-static-libgcc -static-libstdc++ -Wl,--start-group")
-    set(EMBEDDED_LINK_FLAGS "${EMBEDDED_LINK_FLAGS} -Wl,-Bdynamic -lrt")
-    set(EMBEDDED_LINK_FLAGS "${EMBEDDED_LINK_FLAGS} -Wl,-Bdynamic -lpthread")
+
+    # Bionic libc doesn't have separate libs for these
+    if(NOT ${TARGET_TRIPLE} MATCHES android)
+      set(EMBEDDED_LINK_FLAGS "${EMBEDDED_LINK_FLAGS} -Wl,-Bdynamic -lrt")
+      set(EMBEDDED_LINK_FLAGS "${EMBEDDED_LINK_FLAGS} -Wl,-Bdynamic -lpthread")
+    endif()
+
     set(EMBEDDED_LINK_FLAGS "${EMBEDDED_LINK_FLAGS} -Wl,-Bdynamic -ldl -lm")
     set(EMBEDDED_LINK_FLAGS "${EMBEDDED_LINK_FLAGS} -Wl,-Bstatic -lz")
   endif(STATIC_LIBC)
@@ -78,7 +81,6 @@ if(STATIC_LINKING)
 endif(STATIC_LINKING)
 
 set(FIND_LIBRARY_USE_LIB64_PATHS TRUE)
-
 
 get_target_triple(TARGET_TRIPLE)
 if (EMBED_LLVM)

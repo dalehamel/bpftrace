@@ -67,6 +67,7 @@ shift 2
 # so that their headers can be referenced
 [[ $EMBED_LLVM  == "ON" ]] && with_timeout make embedded_llvm "$@"
 [[ $EMBED_CLANG == "ON" ]] && with_timeout make embedded_clang "$@"
+[[ $EMBED_BCC == "ON" ]] && with_timeout make embedded_bcc "$@"
 [[ $DEPS_ONLY == "ON" ]] && exit 0
 make "$@"
 
