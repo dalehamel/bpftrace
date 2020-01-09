@@ -142,12 +142,21 @@ set(gtest_byproducts
   <BINARY_DIR>/googlemock/libgmock.a
 )
 include(ExternalProject)
+
+if(${TARGET_TRIPLE} MATCHES android)
+  set(GOOGLETEST_CMAKE_ARGS CMAKE_ARGS
+      -DCMAKE_TOOLCHAIN_FILE=/opt/android-ndk/build/cmake/android.toolchain.cmake
+      -DANDROID_ABI=${ANDROID_ABI}
+      -DANDROID_NATIVE_API_LEVEL=${ANDROID_NATIVE_API_LEVEL}
+     )
+endif()
 if (OFFLINE_BUILDS)
   ExternalProject_Add(gtest-git
     GIT_REPOSITORY https://github.com/google/googletest.git
     GIT_TAG release-1.8.1
     STEP_TARGETS build update
     EXCLUDE_FROM_ALL 1
+    ${GOOGLETEST_CMAKE_ARGS}
     UPDATE_DISCONNECTED 1
     BUILD_BYPRODUCTS ${gtest_byproducts}
     )
@@ -156,6 +165,7 @@ else()
     GIT_REPOSITORY https://github.com/google/googletest.git
     GIT_TAG release-1.8.1
     STEP_TARGETS build update
+    ${GOOGLETEST_CMAKE_ARGS}
     EXCLUDE_FROM_ALL 1
     BUILD_BYPRODUCTS ${gtest_byproducts}
     )
