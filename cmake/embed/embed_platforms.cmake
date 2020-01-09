@@ -249,8 +249,20 @@ function(clang_platform_config patch_cmd configure_flags build_cmd install_cmd)
     set(clang_build_cmd BUILD_COMMAND /bin/bash -c
         "${CMAKE_MAKE_PROGRAM} -j${nproc} ${CLANG_MAKE_TARGETS}"
        )
+
+    # Clang may fail to build some shared libraries as part of its install all
+    # so like with LLVM we'll just grab what we need.
+    set(clang_install_cmd INSTALL_COMMAND /bin/bash -c
+        "mkdir -p <INSTALL_DIR>/lib/ <INSTALL_DIR>/bin/ && \
+         find <BINARY_DIR>/lib/ | grep '\\.a$' | \
+         xargs -I@ cp @ <INSTALL_DIR>/lib/ && \
+         cp -r <SOURCE_DIR>/include/ <INSTALL_DIR>/ && \
+         cd <BINARY_DIR> && find . | grep .inc$ | xargs -I@ cp @ <INSTALL_DIR>/@"
+       )
+
   endif()
 
   set(CLANG_CONFIGURE_FLAGS "${configure_flags}" PARENT_SCOPE) # FIXME leaky, should the var name be passed separately?
   set(${build_cmd} "${clang_build_cmd}" PARENT_SCOPE)
+  set(${install_cmd} "${clang_install_cmd}" PARENT_SCOPE)
 endfunction(clang_platform_config patch_cmd configure_flags build_cmd install_cmd)
