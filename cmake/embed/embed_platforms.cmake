@@ -134,20 +134,27 @@ endfunction(gnulib_platform_config patch_cmd configure_cmd build_cmd install_cmd
 
 function(binutils_platform_config patch_cmd configure_cmd build_cmd install_cmd)
   get_toolchain_exports(CROSS_EXPORTS)
-  set(binutils_config CONFIGURE_COMMAND /bin/bash -xc
-      "${ELFUTILS_CROSS_EXPORTS} && \
+
+  get_android_cross_tuple(ANDROID_CROSS_TRIPLE) # FIXME only do this on android
+  set(binutils_config_cmd CONFIGURE_COMMAND /bin/bash -xc
+      "${CROSS_EXPORTS} && \
+       mkdir -p <BINARY_DIR>/bfd <BINARY_DIR>/opcodes \
+                <BINARY_DIR>/libiberty <BINARY_DIR>/zlib && \
+       cd <BINARY_DIR>/zlib && \
+       <SOURCE_DIR>/zlib/configure --host ${ANDROID_CROSS_TRIPLE} \
+                                  --prefix <INSTALL_DIR> && \
        mkdir -p <BINARY_DIR>/bfd <BINARY_DIR>/opcodes <BINARY_DIR>/libiberty && \
-       cd <BINARY_DIR>/bfd &&
+       cd <BINARY_DIR>/bfd && \
        <SOURCE_DIR>/bfd/configure --host ${ANDROID_CROSS_TRIPLE} \
                                   --prefix <INSTALL_DIR> && \
-       cd <BINARY_DIR>/libiberty &&
+       cd <BINARY_DIR>/libiberty && \
        <SOURCE_DIR>/libiberty/configure --host ${ANDROID_CROSS_TRIPLE} \
                                   --prefix <INSTALL_DIR> && \
-       cd <BINARY_DIR>/opcodes &&
+       cd <BINARY_DIR>/opcodes && \
        <SOURCE_DIR>/opcodes/configure --host ${ANDROID_CROSS_TRIPLE} \
                                   --prefix <INSTALL_DIR>"
      )
-  set(binutils_config_cmd BUILD_COMMAND /bin/bash -c
+  set(binutils_build_cmd BUILD_COMMAND /bin/bash -c
       "cd <BINARY_DIR>/bfd && make -j${nproc} && \
        cd <BINARY_DIR>/libiberty && make -j${nproc} && \
        cd <BINARY_DIR>/opcodes && make -j${nproc}"
@@ -155,11 +162,12 @@ function(binutils_platform_config patch_cmd configure_cmd build_cmd install_cmd)
   set(binutils_install_cmd INSTALL_COMMAND /bin/bash -c
       "mkdir -p <INSTALL_DIR>/lib && mkdir -p <INSTALL_DIR>/include && \
        cp <BINARY_DIR>/bfd/libbfd.a <INSTALL_DIR>/lib && \
-       cp <SOURCE_DIR>/bfd/bfd.h <INSTALL_DIR>/include && \
+       cp <BINARY_DIR>/bfd/bfd.h <INSTALL_DIR>/include && \
        cp <BINARY_DIR>/opcodes/libopcodes.a <INSTALL_DIR>/lib && \
        cp <SOURCE_DIR>/include/dis-asm.h <INSTALL_DIR>/include && \
-       cp <BINARY_DIR>/libiberty/libiberty.a <INSTALL_DIR>/lib && \
-      "
+       cp <SOURCE_DIR>/include/ansidecl.h <INSTALL_DIR>/include && \
+       cp <SOURCE_DIR>/include/symcat.h <INSTALL_DIR>/include && \
+       cp <BINARY_DIR>/libiberty/libiberty.a <INSTALL_DIR>/lib"
      )
   set(${patch_cmd} "${binutils_patch_cmd}" PARENT_SCOPE)
   set(${configure_cmd} "${binutils_config_cmd}" PARENT_SCOPE)
@@ -194,12 +202,16 @@ function(bcc_platform_config patch_cmd configure_flags build_cmd install_cmd)
     # Based on reading the cmake file to get the headers to install, would be nice if
     # it had a header-install target :)
     set(bcc_install_cmd INSTALL_COMMAND /bin/bash -c " \
-        mkdir -p <INSTALL_DIR>/lib <INSTALL_DIR>/include/bcc && \
-        mkdir -p <INSTALL_DIR>/include/bcc/compat/linux  && \
+        mkdir -p <INSTALL_DIR>/lib <INSTALL_DIR>/include/bcc  \
+                 <INSTALL_DIR>/include/bpf \
+                 <INSTALL_DIR>/include/bcc/compat/linux  && \
         cp <BINARY_DIR>/src/cc/libbcc.a <INSTALL_DIR>/lib && \
         cp <BINARY_DIR>/src/cc/libbcc_bpf.a <INSTALL_DIR>/lib/libbpf.a && \
         cp <BINARY_DIR>/src/cc/libbcc-loader-static.a <INSTALL_DIR>/lib && \
         cp <SOURCE_DIR>/src/cc/libbpf.h <INSTALL_DIR>/include/bcc && \
+        cp <SOURCE_DIR>/src/cc/libbpf/src/libbpf.h <INSTALL_DIR>/include/bpf && \
+        cp <SOURCE_DIR>/src/cc/libbpf/src/bpf.h <INSTALL_DIR>/include/bpf && \
+        cp <SOURCE_DIR>/src/cc/libbpf/src/btf.h <INSTALL_DIR>/include/bpf && \
         cp <SOURCE_DIR>/src/cc/perf_reader.h <INSTALL_DIR>/include/bcc && \
         cp <SOURCE_DIR>/src/cc/file_desc.h <INSTALL_DIR>/include/bcc && \
         cp <SOURCE_DIR>/src/cc/table_desc.h <INSTALL_DIR>/include/bcc && \

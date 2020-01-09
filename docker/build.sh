@@ -81,6 +81,7 @@ shift 2
 [[ $EMBED_LLVM  == "ON" ]] && with_timeout make embedded_llvm "$@"
 [[ $EMBED_CLANG == "ON" ]] && with_timeout make embedded_clang "$@"
 [[ $EMBED_BCC == "ON" ]] && with_timeout make embedded_bcc "$@"
+[[ $EMBED_BINUTILS == "ON" ]] && with_timeout make embedded_binutils "$@"
 [[ $DEPS_ONLY == "ON" ]] && exit 0
 make "$@"
 

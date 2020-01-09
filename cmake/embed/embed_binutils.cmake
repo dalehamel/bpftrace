@@ -10,12 +10,12 @@ include(embed_helpers)
 
 set(BINUTILS_VERSION "2.27") # This is what the android toolchain uses for r21 pre
 set(BINUTILS_DOWNLOAD_URL "https://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VERSION}.tar.gz")
-set(BINUTILS_CHECKSUM "SHA256=00a1ee1f389f81e9979f3a640a01c431b3021de0d42278f6508391a2f0b81c9a")
+set(BINUTILS_CHECKSUM "SHA256=26253bf0f360ceeba1d9ab6965c57c6a48a01a8343382130d1ed47c468a3094f")
 
 # Only build binutils targets that are explicitly needed
 set(BINUTILS_LIBRARY_TARGETS
     bfd
-    libiberty
+    iberty
     opcodes
    )
 
@@ -38,9 +38,9 @@ ExternalProject_Get_Property(embedded_binutils INSTALL_DIR)
 set(EMBEDDED_BINUTILS_INSTALL_DIR ${INSTALL_DIR})
 
 foreach(binutils_target IN LISTS BINUTILS_LIBRARY_TARGETS)
-  list(APPEND BINUTILS_EMBEDDED_CMAKE_TARGETS ${bcc_target})
+  list(APPEND BINUTILS_EMBEDDED_CMAKE_TARGETS ${binutils_target})
   add_library(${binutils_target} STATIC IMPORTED)
   set(binutils_target_path "${EMBEDDED_BINUTILS_INSTALL_DIR}/lib/lib${binutils_target}.a")
   set_property(TARGET ${binutils_target} PROPERTY IMPORTED_LOCATION "${binutils_target_path}")
   add_dependencies(${binutils_target} embedded_binutils)
-endforeach(bcc_target)
+endforeach(binutils_target)

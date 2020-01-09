@@ -127,7 +127,9 @@ if(EMBED_BCC)
   set(HAVE_BCC_PROG_LOAD ON)
   set(HAVE_BCC_CREATE_MAP ON)
   set(HAVE_BCC_ELF_FOREACH ON)
+  set(LIBBPF_BTF_DUMP_FOUND TRUE)
 else()
+  find_package(LibBpf) # For BTF
   find_package(LibBcc REQUIRED)
   include_directories(SYSTEM ${LIBBCC_INCLUDE_DIRS})
 
@@ -173,17 +175,18 @@ check_type_size("BPF_FUNC_get_current_cgroup_id" GET_CURRENT_CGROUP_ID LANGUAGE 
 check_type_size("BPF_FUNC_send_signal" SEND_SIGNAL LANGUAGE C)
 set(CMAKE_EXTRA_INCLUDE_FILES)
 
-#find_package(LibBpf) # FIXME is this needed for btf?
 
 if(EMBED_BINUTILS)
   include(embed_binutils)
+  set(HAVE_BFD_DISASM TRUE)
+  include_directories(SYSTEM "${EMBEDDED_BINUTILS_INSTALL_DIR}/include")
 else()
   find_package(LibBfd)
   find_package(LibOpcodes)
-endif()
 
-if(${LIBBFD_FOUND} AND ${LIBOPCODES_FOUND})
-  set(HAVE_BFD_DISASM TRUE)
+  if(${LIBBFD_FOUND} AND ${LIBOPCODES_FOUND})
+    set(HAVE_BFD_DISASM TRUE)
+  endif()
 endif()
 
 include(CheckIncludeFile)
