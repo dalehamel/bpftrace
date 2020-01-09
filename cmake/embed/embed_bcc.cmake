@@ -19,7 +19,7 @@ set(BCC_CONFIGURE_FLAGS
     )
 
 bcc_platform_config(BCC_PATCH_COMMAND
-                    ${BCC_CONFIGURE_FLAGS}
+                    "${BCC_CONFIGURE_FLAGS}"
                     BCC_BUILD_COMMAND
                     BCC_INSTALL_COMMAND)
 

@@ -28,7 +28,7 @@ function(prepare_clang_patches patch_command)
 
     list(LENGTH DEBIAN_PATCH_SERIES NUM_PATCHES)
     message("${NUM_PATCHES} patches will be applied for Clang ${LLVM_VERSION} on ${HOST_OS_ID}/${HOST_OS_ID_LIKE}")
-    fetch_patches(${PATCH_NAME} ${PATCH_PATH} ${DEBIAN_PATCH_URL} ${DEBIAN_PATCH_CHECKSUM})
+    fetch_patches(${PATCH_NAME} ${PATCH_PATH} ${DEBIAN_PATCH_URL} ${DEBIAN_PATCH_CHECKSUM} 3)
     prepare_patch_series("${DEBIAN_PATCH_SERIES}" ${PATCH_PATH})
 
     # These targets are from LLVMExports.cmake, so may vary by distribution.
@@ -67,17 +67,19 @@ function(prepare_bcc_patches patch_command)
 
   # FIXME maybe check BCC version and bail / warn if not 0.12.0?
   if(${TARGET_TRIPLE} MATCHES android)
-    set(BCC_ANDROID_PATCH_URL "https://gist.github.com/dalehamel/da2f73357cd8cc4e60a1218e562a472b/archive/0accba3a1f10956c1323d7c5742e663a4a7c8370.tar.gz")
-    set(BCC_ANDROID_PATCH_CHECKSUM b711a316ec8209e1a677e43570bbcfadec4ed3953e27ceeb23c501c41bfc86ea)
+    set(BCC_ANDROID_PATCH_URL "https://gist.github.com/dalehamel/da2f73357cd8cc4e60a1218e562a472b/archive/f0180ba9a44db1f4da22b3a3be2d763ab9c0b716.tar.gz")
+    set(BCC_ANDROID_PATCH_CHECKSUM ba5a8a6f567eede61f4df4d468ff6d0faa3a7675be805817bed036eaa597324d)
 
     set(PATCH_NAME "bcc-patches.tar.gz")
     set(PATCH_PATH "${CMAKE_CURRENT_BINARY_DIR}/bcc-android/")
 
     set(BCC_ANDROID_PATCH_SERIES "")
-    list(APPEND BCC_ANDROID_PATCH_SERIES "")
+    list(APPEND BCC_ANDROID_PATCH_SERIES "android-bionic-poll-t.patch")
+    list(APPEND BCC_ANDROID_PATCH_SERIES "bcc-cmakelist-android.patch -p2")
 
+    list(LENGTH BCC_ANDROID_PATCH_SERIES NUM_PATCHES)
     message("${NUM_PATCHES} patches will be applied for BCC to build correctly for Android.")
-    fetch_patches(${PATCH_NAME} ${PATCH_PATH} ${BCC_ANDROID_PATCH_URL} ${BCC_ANDROID_PATCH_CHECKSUM})
+    fetch_patches(${PATCH_NAME} ${PATCH_PATH} ${BCC_ANDROID_PATCH_URL} ${BCC_ANDROID_PATCH_CHECKSUM} 1)
     prepare_patch_series("${BCC_ANDROID_PATCH_SERIES}" ${PATCH_PATH})
     set(BCC_ANDROID_PATCH_COMMAND "(QUILT_PATCHES=${PATCH_PATH} quilt push -a || [[ $? -eq 2 ]])")
   endif()
@@ -90,17 +92,19 @@ function(prepare_libelf_patches patch_command)
   # FIXME this should actually check if toolchain is LLVM, not android. Nothing
   # here is android specific, android toolchain just happens to use LLVM
   if(${TARGET_TRIPLE} MATCHES android)
-    set(LIBELF_LLVM_PATCH_URL "https://gist.github.com/dalehamel/8fc4d9d25295e86d4347229270f29b48/archive/603ac72b18e242a7f4bd31be39419db3a4bd9a83.tar.gz")
-    set(LIBELF_LLVM_PATCH_CHECKSUM c671bdd98e194f3fd6abd2f668406754851aeb1fe3d32b1269ad06906e33911e)
+    set(LIBELF_LLVM_PATCH_URL "https://github.com/dalehamel/bpftrace-android-patches/archive/master.tar.gz")
+    set(LIBELF_LLVM_PATCH_CHECKSUM 1634a81578ecb480a32b8e9477fcda511c7273adf498c5473277e1f6e6e02a4c)
 
-    set(PATCH_NAME "libelf-llvm-patches.tar.gz")
-    set(PATCH_PATH "${CMAKE_CURRENT_BINARY_DIR}/libelf-llvm/")
+    set(PATCH_NAME "bpftrace-android-patches.tar.gz")
+    set(PATCH_PATH "${CMAKE_CURRENT_BINARY_DIR}/bpftrace-android-patches/")
 
     set(LIBELF_LLVM_PATCH_SERIES "")
-    list(APPEND LIBELF_LLVM_PATCH_SERIES "")
+    list(APPEND LIBELF_LLVM_PATCH_SERIES "libelf/libelf-configure.patch -p1")
+    list(APPEND LIBELF_LLVM_PATCH_SERIES "libelf/clang-lib-Makefile_in-warnings.patch -p2")
 
+    list(LENGTH LIBELF_LLVM_PATCH_SERIES NUM_PATCHES)
     message("${NUM_PATCHES} patches will be applied for libelf to be built by LLVM toolchain.")
-    fetch_patches(${PATCH_NAME} ${PATCH_PATH} ${LIBELF_LLVM_PATCH_URL} ${LIBELF_LLVM_PATCH_CHECKSUM})
+    fetch_patches(${PATCH_NAME} ${PATCH_PATH} ${LIBELF_LLVM_PATCH_URL} ${LIBELF_LLVM_PATCH_CHECKSUM} 1)
     prepare_patch_series("${LIBELF_LLVM_PATCH_SERIES}" ${PATCH_PATH})
     set(LIBELF_LLVM_PATCH_COMMAND "(QUILT_PATCHES=${PATCH_PATH} quilt push -a || [[ $? -eq 2 ]])")
   endif()
