@@ -226,7 +226,7 @@ function(bcc_platform_config patch_cmd configure_flags build_cmd install_cmd)
         cp <SOURCE_DIR>/src/cc/libbpf/include/uapi/linux/*.h <INSTALL_DIR>/include/bcc/compat/linux"
       )
 
-    set(PLATFORM_WORDSIZE 32) # FIXME dynamically detect based on ABI
+    get_android_wordsize(PLATFORM_WORDSIZE)
 
     # Credit to @michalgr for this stub header
     set(BITS_H_HACK "\n\

@@ -128,6 +128,19 @@ function(get_android_cross_tuple out)
   endif()
 endfunction(get_android_cross_tuple out)
 
+function(get_android_wordsize out)
+  set(arch ${CMAKE_SYSTEM_PROCESSOR})
+  if("${arch}" MATCHES "armv7")
+    set(${out} 32 PARENT_SCOPE)
+  elseif("${arch}" MATCHES "x86_64")
+    set(${out} 64 PARENT_SCOPE)
+  elseif("${arch}" MATCHES "aarch64")
+    set(${out} 64 PARENT_SCOPE)
+  else()
+    message(FATAL_ERROR "${arch} doesn't match any supported android ABI")
+  endif()
+endfunction(get_android_wordsize out)
+
 function(fix_llvm_linkflags targetProperty propertyValue)
   set_target_properties(${target_property} PROPERTIES
       INTERFACE_LINK_LIBRARIES "${propertyValue}"
