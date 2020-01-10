@@ -42,7 +42,7 @@ jobs:
       with:
         name: bpftrace
         path: build-android/src/bpftrace
-    - uses: actions/upload-artifact@v1
-      with:
-        name: bpftrace
-        path: build-android/tests/bpftrace-test
+#    - uses: actions/upload-artifact@v1
+#      with:
+#        name: bpftrace
+#        path: build-android/tests/bpftrace-test
