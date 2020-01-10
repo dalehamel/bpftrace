@@ -13,7 +13,7 @@ jobs:
 #      run: |
 #        docker build -t bpftrace-android -f docker/Dockerfile.android docker/
   cross_builds:
-    needs: build_toolchain
+#    needs: build_toolchain
     runs-on: ubuntu-18.04
     strategy:
       matrix:
