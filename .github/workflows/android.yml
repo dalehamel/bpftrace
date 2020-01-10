@@ -45,6 +45,17 @@ jobs:
 #          ANDROID_ABI: x86_64
     steps:
     - uses: actions/checkout@v2
+
+    - name: Artifact Cache - LLVM
+      uses: actions/cache@v1
+      with:
+        path: ${PWD}/build-android-${ANDROID_ABI}/embedded_llvm
+        key: ${{ matrix.env }}
+    - name: Artifact Cache - Clang
+      uses: actions/cache@v1
+      with:
+        path: ${PWD}/build-android-${ANDROID_ABI}/embedded_clang
+        key: ${{ matrix.env }}
     - name: Build docker container
       run: |
         docker build -t bpftrace-android -f docker/Dockerfile.android docker/
@@ -52,4 +63,5 @@ jobs:
       env: ${{ matrix.env }}
       run: |
         docker run --privileged -v ${PWD}:${PWD} -v /sys/kernel/debug:/sys/kernel/debug:rw -v /lib/modules:/lib/modules:ro -v /usr/src:/usr/src:ro -e STATIC_LINKING=ON -e EMBED_LLVM=ON -e EMBED_CLANG=ON -e EMBED_BCC=ON -e EMBED_LIBELF=ON -e EMBED_BINUTILS=ON -e ANDROID_ABI=${ANDROID_ABI} bpftrace-android ${PWD}/build-android-${ANDROID_ABI} Release -j9
+
 
