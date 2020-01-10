@@ -3,7 +3,7 @@ name: Android Build
 on: push
 
 jobs:
-  android_x86_64:
+  build_toolchain:
     name: Build Android x86_64
     runs-on: ubuntu-latest
     steps:
@@ -11,3 +11,37 @@ jobs:
     - name: Build docker container
       run: |
         docker build -t bpftrace-android -f docker/Dockerfile.android docker/
+  cross_builds:
+    needs: build_toolchain
+    strategy:
+      matrix:
+        os:
+        - ubuntu-18.04
+        env:
+        - STATIC_LINKING: ON
+          EMBED_LLVM: ON
+          EMBED_CLANG: ON
+          EMBED_BCC: ON
+          EMBED_LIBELF: ON
+          EMBED_BINUTILS: ON
+          ANDROID_ABI: armeabi-v7a
+        - STATIC_LINKING: ON
+          EMBED_LLVM: ON
+          EMBED_CLANG: ON
+          EMBED_BCC: ON
+          EMBED_LIBELF: ON
+          EMBED_BINUTILS: ON
+          ANDROID_ABI: arm64-v8a
+        - STATIC_LINKING: ON
+          EMBED_LLVM: ON
+          EMBED_CLANG: ON
+          EMBED_BCC: ON
+          EMBED_LIBELF: ON
+          EMBED_BINUTILS: ON
+          ANDROID_ABI: x86_64
+    steps:
+    - name: Run bpftrace build
+      env: ${{ matrix.env }}
+      run: |
+        docker run --privileged -it -v ${PWD}:${PWD} -v /sys/kernel/debug:/sys/kernel/debug:rw -v /lib/modules:/lib/modules:ro -v /usr/src:/usr/src:ro -e STATIC_LINKING=ON -e EMBED_LLVM=ON -e EMBED_CLANG=ON -e EMBED_BCC=ON -e EMBED_LIBELF=ON -e EMBED_BINUTILS=ON -e ANDROID_ABI=${ANDROID_ABI} bpftrace-android ${PWD}/build-android-${ANDROID_ABI} Release -j9
+
