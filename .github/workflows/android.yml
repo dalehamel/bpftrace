@@ -1,0 +1,12 @@
+name: Android Build
+
+on: push
+
+jobs:
+  android_x86_64:
+    name: Build Android x86_64
+    runs-on: ubuntu-latest
+    steps:
+    - name: Build docker container
+      run: |
+        docker build -t bpftrace-android -f docker/Dockerfile.android docker/
