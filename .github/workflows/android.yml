@@ -7,6 +7,9 @@ jobs:
     name: Build Android x86_64
     runs-on: ubuntu-latest
     steps:
+    - name: where ame i
+      run: |
+        pwd && ls -l
     - name: Build docker container
       run: |
         docker build -t bpftrace-android -f docker/Dockerfile.android docker/
