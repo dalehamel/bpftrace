@@ -8,9 +8,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: where ame i
-      run: |
-        pwd && ls -l && find /home
     - name: Build docker container
       run: |
         docker build -t bpftrace-android -f docker/Dockerfile.android docker/
