@@ -294,7 +294,8 @@ function(clang_platform_config patch_cmd configure_flags build_cmd install_cmd)
 
     string(REPLACE ";" " " CLANG_MAKE_TARGETS "${CLANG_LIBRARY_TARGETS}" )
     set(clang_build_cmd BUILD_COMMAND /bin/bash -c
-        "${CMAKE_MAKE_PROGRAM} -j${nproc} ${CLANG_MAKE_TARGETS}"
+        "${CMAKE_MAKE_PROGRAM} -j${nproc} libclang_static && \
+         ${CMAKE_MAKE_PROGRAM} -j${nproc} ${CLANG_MAKE_TARGETS}"
        )
 
     # Clang may fail to build some shared libraries as part of its install all
