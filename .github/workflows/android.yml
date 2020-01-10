@@ -3,14 +3,15 @@ name: Android Build
 on: push
 
 jobs:
-  build_toolchain:
-    name: Build Android SDK container
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Build docker container
-      run: |
-        docker build -t bpftrace-android -f docker/Dockerfile.android docker/
+# FIXME get push access to quay.io via secret and share image between jobs
+#  build_toolchain:
+#    name: Build Android SDK container
+#    runs-on: ubuntu-latest
+#    steps:
+#    - uses: actions/checkout@v2
+#    - name: Build docker container
+#      run: |
+#        docker build -t bpftrace-android -f docker/Dockerfile.android docker/
   cross_builds:
     needs: build_toolchain
     runs-on: ubuntu-18.04
@@ -43,6 +44,10 @@ jobs:
 #          EMBED_BINUTILS: ON
 #          ANDROID_ABI: x86_64
     steps:
+    - uses: actions/checkout@v2
+    - name: Build docker container
+      run: |
+        docker build -t bpftrace-android -f docker/Dockerfile.android docker/
     - name: Run bpftrace build
       env: ${{ matrix.env }}
       run: |
