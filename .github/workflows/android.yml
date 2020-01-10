@@ -53,3 +53,14 @@ jobs:
       run: |
         docker run --privileged -v ${PWD}:${PWD} -v /sys/kernel/debug:/sys/kernel/debug:rw -v /lib/modules:/lib/modules:ro -v /usr/src:/usr/src:ro -e STATIC_LINKING=ON -e EMBED_LLVM=ON -e EMBED_CLANG=ON -e EMBED_BCC=ON -e EMBED_LIBELF=ON -e EMBED_BINUTILS=ON -e ANDROID_ABI=${ANDROID_ABI} bpftrace-android ${PWD}/build-android Release -j9
 
+    - name: Upload bpftrace
+       uses: actions/upload-artifact@v1
+       with:
+         name: bpftrace
+         path: ${PWD}/build-android/src/bpftrace
+
+    - name: Upload bpftrace-test
+       uses: actions/upload-artifact@v1
+       with:
+         name: bpftrace
+         path: ${PWD}/build-android/tests/bpftrace-test
