@@ -44,7 +44,7 @@ jobs:
         path: build-android/src/bpftrace
     - uses: actions/upload-artifact@v1
       with:
-        name: bpftrace-${{matrix.os.ANDROID_ABI}
+        name: bpftrace-${{matrix.os.ANDROID_ABI}}
         path: build-android/src/bpftrace
 #    - uses: actions/upload-artifact@v1
 #      with:
