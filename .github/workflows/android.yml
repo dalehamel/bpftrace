@@ -45,17 +45,6 @@ jobs:
 #          ANDROID_ABI: x86_64
     steps:
     - uses: actions/checkout@v2
-
-    - name: Artifact Cache - LLVM
-      uses: actions/cache@v1
-      with:
-        path: build-android/embedded_llvm
-        key: ${{ matrix.env }}
-    - name: Artifact Cache - Clang
-      uses: actions/cache@v1
-      with:
-        path: build-android/embedded_clang
-        key: ${{ matrix.env }}
     - name: Build docker container
       run: |
         docker build -t bpftrace-android -f docker/Dockerfile.android docker/
