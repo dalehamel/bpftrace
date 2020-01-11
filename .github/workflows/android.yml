@@ -3,27 +3,29 @@ name: Android Build
 on: push
 
 jobs:
-# FIXME get push access to quay.io via secret and share image between jobs
-#  build_toolchain:
-#    name: Build Android SDK container
-#    runs-on: ubuntu-latest
-#    steps:
-#    - uses: actions/checkout@v2
-#    - name: Build docker container
-#      run: |
-#        docker build -t bpftrace-android -f docker/Dockerfile.android docker/
   cross_builds:
-#    needs: build_toolchain
     runs-on: ubuntu-18.04
     strategy:
       matrix:
         env:
         - ANDROID_ABI: armeabi-v7a
           STRIP_CMD: arm-linux-androideabi-strip
+          TYPE: Debug
+        - ANDROID_ABI: armeabi-v7a
+          STRIP_CMD: arm-linux-androideabi-strip
+          TYPE: Release
         - ANDROID_ABI: arm64-v8a
           STRIP_CMD: aarch64-linux-android-strip
+          TYPE: Debug
+        - ANDROID_ABI: arm64-v8a
+          STRIP_CMD: aarch64-linux-android-strip
+          TYPE: Release
         - ANDROID_ABI: x86_64
           STRIP_CMD: x86_64-linux-android-strip
+          TYPE: Debug
+        - ANDROID_ABI: x86_64
+          STRIP_CMD: x86_64-linux-android-strip
+          TYPE: Release
     steps:
     - uses: actions/checkout@v2
     - name: Build docker container
@@ -32,16 +34,17 @@ jobs:
     - name: Run bpftrace build
       env: ${{ matrix.env }}
       run: |
-        docker run --privileged -v ${PWD}:${PWD} -v /sys/kernel/debug:/sys/kernel/debug:rw -v /lib/modules:/lib/modules:ro -v /usr/src:/usr/src:ro -e STATIC_LINKING=ON -e EMBED_LLVM=ON -e EMBED_CLANG=ON -e EMBED_BCC=ON -e EMBED_LIBELF=ON -e EMBED_BINUTILS=ON -e RUN_TESTS=0 -e ANDROID_ABI=${ANDROID_ABI} bpftrace-android ${PWD}/build-android Release -j9
+        docker run --privileged -v ${PWD}:${PWD} -v /sys/kernel/debug:/sys/kernel/debug:rw -v /lib/modules:/lib/modules:ro -v /usr/src:/usr/src:ro -e STATIC_LINKING=ON -e EMBED_LLVM=ON -e EMBED_CLANG=ON -e EMBED_BCC=ON -e EMBED_LIBELF=ON -e EMBED_BINUTILS=ON -e RUN_TESTS=0 -e ANDROID_ABI=${ANDROID_ABI} bpftrace-android ${PWD}/build-android ${TYPE} -j9
     - name: Strip artifacts
       env: ${{ matrix.env }}
+      if: matrix.env['TYPE'] == 'Release'
       run: |
         docker run --privileged -v ${PWD}:${PWD} -v /sys/kernel/debug:/sys/kernel/debug:rw -v /lib/modules:/lib/modules:ro -v /usr/src:/usr/src:ro -e STATIC_LINKING=ON -e EMBED_LLVM=ON -e EMBED_CLANG=ON -e EMBED_BCC=ON -e EMBED_LIBELF=ON -e EMBED_BINUTILS=ON -e RUN_TESTS=0 -e ANDROID_ABI=${ANDROID_ABI} --entrypoint /bin/bash bpftrace-android -c "/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/${STRIP_CMD} --keep-symbol BEGIN_trigger $(pwd)/build-android/src/bpftrace"
     - uses: actions/upload-artifact@v1
       with:
-        name: bpftrace-${{ matrix.env['ANDROID_ABI'] }}
+        name: bpftrace-${{ matrix.env['TYPE'] }}-${{ matrix.env['ANDROID_ABI'] }}
         path: build-android/src/bpftrace
     - uses: actions/upload-artifact@v1
       with:
-        name: bpftrace
+        name: bpftrace_test-${{ matrix.env['TYPE'] }}-${{ matrix.env['ANDROID_ABI'] }}
         path: build-android/tests/bpftrace_test
