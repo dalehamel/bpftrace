@@ -188,33 +188,6 @@ endif()
 include(CheckIncludeFile)
 check_include_file("sys/sdt.h" HAVE_SYSTEMTAP_SYS_SDT_H)
 
-if (EMBED_LLVM)
-  include(embed_llvm)
-else()
-  # Some users have multiple versions of llvm installed and would like to specify
-  # a specific llvm version.
-  if(${LLVM_REQUESTED_VERSION})
-    find_package(LLVM ${LLVM_REQUESTED_VERSION} REQUIRED)
-  else()
-    find_package(LLVM REQUIRED)
-  endif()
-
-  if(${LLVM_VERSION_MAJOR} VERSION_LESS 5)
-    message(SEND_ERROR "Unsupported LLVM version found: ${LLVM_INCLUDE_DIRS}")
-    message(SEND_ERROR "Specify an LLVM major version using LLVM_REQUESTED_VERSION=<major version>")
-  endif()
-
-  include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
-  add_definitions(${LLVM_DEFINITIONS})
-endif()
-
-if(EMBED_CLANG)
-  include(embed_clang)
-else()
-  find_package(Clang REQUIRED)
-  include_directories(SYSTEM ${CLANG_INCLUDE_DIRS})
-endif()
-
 add_subdirectory(src/arch)
 add_subdirectory(src/ast)
 add_subdirectory(src)
