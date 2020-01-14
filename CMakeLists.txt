@@ -131,7 +131,6 @@ if(EMBED_BCC)
   set(HAVE_BCC_ELF_FOREACH ON)
   set(LIBBPF_BTF_DUMP_FOUND TRUE)
 else()
-  find_package(LibBpf) # For BTF
   find_package(LibBcc REQUIRED)
   include_directories(SYSTEM ${LIBBCC_INCLUDE_DIRS})
 
@@ -145,6 +144,8 @@ else()
 
   set(CMAKE_REQUIRED_LIBRARIES)
   set(CMAKE_REQUIRED_LINK_OPTIONS)
+
+  find_package(LibBpf) # For BTF
 endif()
 
 # flex and bison are only required in the host toolchain, not target when cross compiling.
