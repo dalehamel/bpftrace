@@ -94,42 +94,39 @@ set(LLVM_LIBRARY_TARGETS
     LLVMSupport
     )
 
-get_host_triple(CHOST)
-get_target_triple(CBUILD)
-# These build flags are based off of Alpine, Debian and Gentoo packages
-# optimized for compatibility and reducing build targets
-set(LLVM_CONFIGURE_FLAGS   -Wno-dev
-                           -DLLVM_TARGETS_TO_BUILD=BPF
-                           -DCMAKE_BUILD_TYPE=${EMBEDDED_BUILD_TYPE}
-                           -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-                           -DLLVM_BINUTILS_INCDIR=/usr/include
-                           -DLLVM_BUILD_DOCS=OFF
-                           -DLLVM_BUILD_EXAMPLES=OFF
-                           -DLLVM_INCLUDE_EXAMPLES=OFF
-                           -DLLVM_BUILD_EXTERNAL_COMPILER_RT=ON
-                           -DLLVM_BUILD_LLVM_DYLIB=ON
-                           -DLLVM_LINK_LLVM_DYLIB=OFF
-                           -DLLVM_BUILD_TESTS=OFF
-                           -DLLVM_INCLUDE_TESTS=OFF
-                           -DLLVM_BUILD_TOOLS=OFF
-                           -DLLVM_INCLUDE_TOOLS=OFF
-                           -DLLVM_INCLUDE_BENCHMARKS=OFF
-                           -DLLVM_DEFAULT_TARGET_TRIPLE=${CBUILD}
-                           -DLLVM_ENABLE_ASSERTIONS=OFF
-                           -DLLVM_ENABLE_CXX1Y=ON
-                           -DLLVM_ENABLE_FFI=OFF
-                           -DLLVM_ENABLE_LIBEDIT=OFF
-                           -DLLVM_ENABLE_LIBCXX=OFF
-                           -DLLVM_ENABLE_PIC=ON
-                           -DLLVM_ENABLE_LIBPFM=OFF
-                           -DLLVM_ENABLE_EH=ON
-                           -DLLVM_ENABLE_RTTI=ON
-                           -DLLVM_ENABLE_SPHINX=OFF
-                           -DLLVM_ENABLE_TERMINFO=OFF
-                           -DLLVM_ENABLE_ZLIB=ON
-                           -DLLVM_HOST_TRIPLE=${CHOST}
-                           -DLLVM_APPEND_VC_REV=OFF
-                           )
+set(LLVM_CONFIGURE_FLAGS
+    -Wno-dev
+    -DLLVM_TARGETS_TO_BUILD=BPF
+    -DCMAKE_BUILD_TYPE=${EMBEDDED_BUILD_TYPE}
+    -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+    -DLLVM_BINUTILS_INCDIR=/usr/include
+    -DLLVM_BUILD_DOCS=OFF
+    -DLLVM_BUILD_EXAMPLES=OFF
+    -DLLVM_INCLUDE_EXAMPLES=OFF
+    -DLLVM_BUILD_EXTERNAL_COMPILER_RT=ON
+    -DLLVM_BUILD_LLVM_DYLIB=ON
+    -DLLVM_LINK_LLVM_DYLIB=OFF
+    -DLLVM_BUILD_TESTS=OFF
+    -DLLVM_INCLUDE_TESTS=OFF
+    -DLLVM_BUILD_TOOLS=OFF
+    -DLLVM_INCLUDE_TOOLS=OFF
+    -DLLVM_INCLUDE_BENCHMARKS=OFF
+    -DLLVM_DEFAULT_TARGET_TRIPLE=${CBUILD}
+    -DLLVM_ENABLE_ASSERTIONS=OFF
+    -DLLVM_ENABLE_CXX1Y=ON
+    -DLLVM_ENABLE_FFI=OFF
+    -DLLVM_ENABLE_LIBEDIT=OFF
+    -DLLVM_ENABLE_LIBCXX=OFF
+    -DLLVM_ENABLE_PIC=ON
+    -DLLVM_ENABLE_LIBPFM=OFF
+    -DLLVM_ENABLE_EH=ON
+    -DLLVM_ENABLE_RTTI=ON
+    -DLLVM_ENABLE_SPHINX=OFF
+    -DLLVM_ENABLE_TERMINFO=OFF
+    -DLLVM_ENABLE_ZLIB=ON
+    -DLLVM_HOST_TRIPLE=${CHOST}
+    -DLLVM_APPEND_VC_REV=OFF
+    )
 
 
 llvm_platform_config(LLVM_PATCH_COMMAND
@@ -141,8 +138,6 @@ set(LLVM_TARGET_LIBS "")
 foreach(llvm_target IN LISTS LLVM_LIBRARY_TARGETS)
   list(APPEND LLVM_TARGET_LIBS "<INSTALL_DIR>/lib/lib${llvm_target}.a")
 endforeach(llvm_target)
-
-message("LLVM CONFIG ${LLVM_CONFIGURE_FLAGS}")
 
 ExternalProject_Add(embedded_llvm
   URL "${LLVM_DOWNLOAD_URL}"

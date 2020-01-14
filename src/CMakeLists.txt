@@ -82,7 +82,6 @@ endif(ALLOW_UNSAFE_UPROBE)
 target_link_libraries(bpftrace arch ast parser resources)
 
 if(STATIC_LINKING)
-
   if(EMBED_BCC)
     target_link_libraries(bpftrace ${BCC_EMBEDDED_CMAKE_TARGETS})
   else()

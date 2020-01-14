@@ -65,14 +65,14 @@ if(STATIC_LINKING)
     set(CMAKE_EXE_LINKER_FLAGS "-static")
   elseif(EMBED_LLVM OR EMBED_CLANG)
     set(EMBEDDED_LINK_FLAGS "-static-libgcc -static-libstdc++ -Wl,--start-group")
-
     get_target_triple(TARGET_TRIPLE)
-    # Bionic libc doesn't have separate libs for these
+
+    # If this starts to get ugly this should move to a function in embed_helpers
     if(NOT ${TARGET_TRIPLE} MATCHES android)
+      # Android bionic libc doesn't have separate libs for these
       set(EMBEDDED_LINK_FLAGS "${EMBEDDED_LINK_FLAGS} -Wl,-Bdynamic -lrt")
       set(EMBEDDED_LINK_FLAGS "${EMBEDDED_LINK_FLAGS} -Wl,-Bdynamic -lpthread")
     endif()
-
     set(EMBEDDED_LINK_FLAGS "${EMBEDDED_LINK_FLAGS} -Wl,-Bdynamic -ldl -lm")
     set(EMBEDDED_LINK_FLAGS "${EMBEDDED_LINK_FLAGS} -Wl,-Bstatic -lz")
   endif(STATIC_LIBC)
@@ -145,11 +145,7 @@ else()
   set(CMAKE_REQUIRED_LINK_OPTIONS)
 endif()
 
-# Flex and Bison seem to just be built-time dependencies for the binary
-# They likely just set a variable that is used to find the path of each executable
-# which is all we need to override
-# Perhaps this can be done with HINTS or PATHS https://cmake.org/cmake/help/latest/command/find_package.html
-# Actually, it looks like they are in the HOST format?
+# flex and bison are only required in the host toolchain, not target when cross compiling.
 find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
 bison_target(bison_parser src/parser.yy ${CMAKE_BINARY_DIR}/parser.tab.cc VERBOSE)
@@ -175,7 +171,6 @@ check_type_size("BPF_FUNC_get_current_cgroup_id" GET_CURRENT_CGROUP_ID LANGUAGE 
 check_type_size("BPF_FUNC_send_signal" SEND_SIGNAL LANGUAGE C)
 set(CMAKE_EXTRA_INCLUDE_FILES)
 
-
 if(EMBED_BINUTILS)
   include(embed_binutils)
   set(HAVE_BFD_DISASM TRUE)
@@ -191,6 +186,33 @@ endif()
 
 include(CheckIncludeFile)
 check_include_file("sys/sdt.h" HAVE_SYSTEMTAP_SYS_SDT_H)
+
+if (EMBED_LLVM)
+  include(embed_llvm)
+else()
+  # Some users have multiple versions of llvm installed and would like to specify
+  # a specific llvm version.
+  if(${LLVM_REQUESTED_VERSION})
+    find_package(LLVM ${LLVM_REQUESTED_VERSION} REQUIRED)
+  else()
+    find_package(LLVM REQUIRED)
+  endif()
+
+  if(${LLVM_VERSION_MAJOR} VERSION_LESS 5)
+    message(SEND_ERROR "Unsupported LLVM version found: ${LLVM_INCLUDE_DIRS}")
+    message(SEND_ERROR "Specify an LLVM major version using LLVM_REQUESTED_VERSION=<major version>")
+  endif()
+
+  include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
+  add_definitions(${LLVM_DEFINITIONS})
+endif()
+
+if(EMBED_CLANG)
+  include(embed_clang)
+else()
+  find_package(Clang REQUIRED)
+  include_directories(SYSTEM ${CLANG_INCLUDE_DIRS})
+endif()
 
 add_subdirectory(src/arch)
 add_subdirectory(src/ast)

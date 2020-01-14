@@ -35,14 +35,15 @@ else()
   message(FATAL_ERROR "No supported LLVM version has been specified with LLVM_VERSION (LLVM_VERSION=${LLVM_VERSION}), aborting")
 endif()
 
-# Clang always needs a custom install command, because libclang isn't installed
-# by the all target.
-set(libclang_install_command "mkdir -p <INSTALL_DIR>/lib/ && \
-                              cp <BINARY_DIR>/lib/libclang.a <INSTALL_DIR>/lib/libclang.a")
-
 ProcessorCount(nproc)
-set(clang_install_command "${CMAKE_MAKE_PROGRAM} -j ${nproc} install && ${libclang_install_command}") # FIXME work with ninja / detect generator?
-set(CLANG_INSTALL_COMMAND INSTALL_COMMAND /bin/bash -c "${clang_install_command}")
+set(LIBCLANG_INSTALL_COMMAND
+    "mkdir -p <INSTALL_DIR>/lib/ && \
+     cp <BINARY_DIR>/lib/libclang.a <INSTALL_DIR>/lib/libclang.a"
+    )
+
+set(CLANG_INSTALL_COMMAND INSTALL_COMMAND /bin/bash -c
+    "${CMAKE_MAKE_PROGRAM} install -j${nproc} && ${LIBCLANG_INSTALL_COMMAND}"
+   )
 
 if(NOT EMBED_LLVM)
   # If not linking and building against embedded LLVM, patches may need to
@@ -55,10 +56,11 @@ endif()
 if(EMBED_LIBCLANG_ONLY)
   ProcessorCount(nproc)
   set(CLANG_LIBRARY_TARGETS clang)
-  # Include system clang here to deal with the rest of the targets
+  set(CLANG_BUILD_COMMAND BUILD_COMMAND /bin/bash -c
+      "${CMAKE_MAKE_PROGRAM} libclang_static -j${nproc}"
+     )
+  set(CLANG_INSTALL_COMMAND INSTALL_COMMAND /bin/bash -c "${LIBCLANG_INSTALL_COMMAND}")
 
-  set(CLANG_BUILD_COMMAND BUILD_COMMAND "${CMAKE_MAKE_PROGRAM} libclang_static -j${nproc}")
-  set(CLANG_INSTALL_COMMAND INSTALL_COMMAND /bin/bash -c "${libclang_install_command}")
   find_package(Clang REQUIRED)
   include_directories(SYSTEM ${CLANG_INCLUDE_DIRS})
 else()
@@ -85,54 +87,27 @@ endif()
 # These configure flags are a blending of the Alpine, debian, and gentoo
 # packages configure flags, customized to reduce build targets as much as
 # possible
-set(CLANG_CONFIGURE_FLAGS  -Wno-dev
-                           -DLLVM_TARGETS_TO_BUILD=BPF
-                           -DCMAKE_BUILD_TYPE=${EMBEDDED_BUILD_TYPE}
-                           -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-                           -DCMAKE_VERBOSE_MAKEFILE=OFF
-                           -DCLANG_VENDOR=bpftrace
-                           -DCLANG_BUILD_EXAMPLES=OFF
-                           -DCLANG_INCLUDE_DOCS=OFF
-                           -DCLANG_INCLUDE_TESTS=OFF
-                           -DCLANG_PLUGIN_SUPPORT=ON
-                           -DLIBCLANG_BUILD_STATIC=ON
-                           -DLLVM_ENABLE_EH=ON
-                           -DLLVM_ENABLE_RTTI=ON
-                           -DCLANG_BUILD_TOOLS=OFF
-                           )
+set(CLANG_CONFIGURE_FLAGS
+    -Wno-dev
+    -DLLVM_TARGETS_TO_BUILD=BPF
+    -DCMAKE_BUILD_TYPE=${EMBEDDED_BUILD_TYPE}
+    -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+    -DCMAKE_VERBOSE_MAKEFILE=OFF
+    -DCLANG_VENDOR=bpftrace
+    -DCLANG_BUILD_EXAMPLES=OFF
+    -DCLANG_INCLUDE_DOCS=OFF
+    -DCLANG_INCLUDE_TESTS=OFF
+    -DCLANG_PLUGIN_SUPPORT=ON
+    -DLIBCLANG_BUILD_STATIC=ON
+    -DLLVM_ENABLE_EH=ON
+    -DLLVM_ENABLE_RTTI=ON
+    -DCLANG_BUILD_TOOLS=OFF
+   )
 
 # If LLVM is being embedded, inform Clang to use its Cmake file instead of system
 if(EMBED_LLVM)
   list(APPEND CLANG_CONFIGURE_FLAGS  -DLLVM_DIR=${EMBEDDED_LLVM_INSTALL_DIR}/lib/cmake/llvm)
 endif()
-
-if(${CROSS_COMPILING_CLANG})
-  ProcessorCount(nproc)
-
-  # If cross-compling, a host architecture clang-tblgen is needed, and not
-  # provided by standard packages. Unlike LLVM, clang isn't smart enough to
-  # bootstrap this for itself
-  ExternalProject_Add(embedded_clang_host
-    URL "${CLANG_DOWNLOAD_URL}"
-    URL_HASH "${CLANG_URL_CHECKSUM}"
-    BUILD_COMMAND /bin/bash -c "${CMAKE_MAKE_PROGRAM} -j${nproc} clang-tblgen"
-    INSTALL_COMMAND /bin/bash -c "mkdir -p <INSTALL_DIR>/bin && \
-                                  cp <BINARY_DIR>/bin/clang-tblgen <INSTALL_DIR>/bin"
-    BUILD_BYPRODUCTS <INSTALL_DIR>/bin/clang-tblgen
-    UPDATE_DISCONNECTED 1
-    DOWNLOAD_NO_PROGRESS 1
-  ) # FIXME set build byproducts for ninja
-
-  ExternalProject_Get_Property(embedded_clang_host INSTALL_DIR)
-  set(CLANG_TBLGEN_PATH "${INSTALL_DIR}/bin/clang-tblgen")
-
-  list(APPEND CLANG_CONFIGURE_FLAGS -DCLANG_TABLEGEN=${CLANG_TBLGEN_PATH})
-endif()
-
-clang_platform_config(CLANG_PATCH_COMMAND
-                     "${CLANG_CONFIGURE_FLAGS}"
-                      CLANG_BUILD_COMMAND
-                      CLANG_INSTALL_COMMAND)
 
 set(CLANG_TARGET_LIBS "")
 foreach(clang_target IN LISTS CLANG_LIBRARY_TARGETS)
