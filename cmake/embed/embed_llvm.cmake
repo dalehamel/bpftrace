@@ -94,6 +94,10 @@ set(LLVM_LIBRARY_TARGETS
     LLVMSupport
     )
 
+get_host_triple(CHOST)
+get_target_triple(CBUILD)
+# These build flags are based off of Alpine, Debian and Gentoo packages
+# optimized for compatibility and reducing build targets
 set(LLVM_CONFIGURE_FLAGS
     -Wno-dev
     -DLLVM_TARGETS_TO_BUILD=BPF

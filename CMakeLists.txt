@@ -118,6 +118,8 @@ else()
   include_directories(SYSTEM ${LIBELF_INCLUDE_DIRS})
 endif()
 
+include(CheckSymbolExists)
+
 if(EMBED_BCC)
   include(embed_bcc)
   include_directories(SYSTEM "${EMBEDDED_BCC_INSTALL_DIR}/include")
@@ -155,7 +157,6 @@ add_library(parser ${BISON_bison_parser_OUTPUTS} ${FLEX_flex_lexer_OUTPUTS})
 target_compile_options(parser PRIVATE "-w")
 target_include_directories(parser PUBLIC src src/ast ${CMAKE_BINARY_DIR})
 
-include(CheckSymbolExists)
 set(CMAKE_REQUIRED_DEFINITIONS -D_GNU_SOURCE)
 check_symbol_exists(name_to_handle_at "sys/types.h;sys/stat.h;fcntl.h" HAVE_NAME_TO_HANDLE_AT)
 set(CMAKE_REQUIRED_DEFINITIONS)
