@@ -279,6 +279,9 @@ endfunction(llvm_platform_config patch_cmd configure_flags build_cmd install_cmd
 
 function(clang_platform_config patch_cmd configure_flags build_cmd install_cmd)
 
+  set(clang_build_cmd "${build_cmd}")
+  set(clang_install_cmd "${install_cmd}")
+
   get_target_triple(TARGET_TRIPLE)
   if(${TARGET_TRIPLE} MATCHES android)
     ProcessorCount(nproc)
