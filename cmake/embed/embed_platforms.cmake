@@ -278,9 +278,32 @@ function(llvm_platform_config patch_cmd configure_flags build_cmd install_cmd)
 endfunction(llvm_platform_config patch_cmd configure_flags build_cmd install_cmd)
 
 function(clang_platform_config patch_cmd configure_flags build_cmd install_cmd)
+  ProcessorCount(nproc)
+  # Clang always needs a custom install command, because libclang isn't installed
+  # by the all target.
+  set(libclang_install_command
+      "mkdir -p <INSTALL_DIR>/lib/ && \
+      cp <BINARY_DIR>/lib/libclang.a <INSTALL_DIR>/lib/libclang.a"
+     )
 
-  set(clang_build_cmd "${build_cmd}")
-  set(clang_install_cmd "${install_cmd}")
+  set(clang_install_command
+      "${CMAKE_MAKE_PROGRAM} -j ${nproc} install && $\
+       {libclang_install_command}"
+     )
+  set(CLANG_INSTALL_COMMAND INSTALL_COMMAND /bin/bash -c "${clang_install_command}")
+
+  if(NOT EMBED_LLVM)
+    # If not linking and building against embedded LLVM, patches may need to
+    # be applied to link with the distribution LLVM. This is handled by a
+    # helper function
+    prepare_clang_patches(patch_command)
+    set(CLANG_PATCH_COMMAND PATCH_COMMAND /bin/bash -c "${patch_command}")
+  endif()
+
+  if(EMBED_LIBCLANG_ONLY)
+    set(CLANG_BUILD_COMMAND BUILD_COMMAND "${CMAKE_MAKE_PROGRAM} libclang_static -j${nproc}")
+    set(CLANG_INSTALL_COMMAND INSTALL_COMMAND /bin/bash -c "${libclang_install_command}")
+  endif()
 
   get_target_triple(TARGET_TRIPLE)
   if(${TARGET_TRIPLE} MATCHES android)

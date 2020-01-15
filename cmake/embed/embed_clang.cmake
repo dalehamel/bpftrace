@@ -35,35 +35,10 @@ else()
   message(FATAL_ERROR "No supported LLVM version has been specified with LLVM_VERSION (LLVM_VERSION=${LLVM_VERSION}), aborting")
 endif()
 
-# Clang always needs a custom install command, because libclang isn't installed
-# by the all target.
-set(libclang_install_command
-    "mkdir -p <INSTALL_DIR>/lib/ && \
-    cp <BINARY_DIR>/lib/libclang.a <INSTALL_DIR>/lib/libclang.a"
-   )
-
-ProcessorCount(nproc)
-set(clang_install_command
-    "${CMAKE_MAKE_PROGRAM} -j ${nproc} install && $\
-     {libclang_install_command}"
-   )
-set(CLANG_INSTALL_COMMAND INSTALL_COMMAND /bin/bash -c "${clang_install_command}")
-
-if(NOT EMBED_LLVM)
-  # If not linking and building against embedded LLVM, patches may need to
-  # be applied to link with the distribution LLVM. This is handled by a
-  # helper function
-  prepare_clang_patches(patch_command)
-  set(CLANG_PATCH_COMMAND PATCH_COMMAND /bin/bash -c "${patch_command}")
-endif()
-
 if(EMBED_LIBCLANG_ONLY)
   ProcessorCount(nproc)
   set(CLANG_LIBRARY_TARGETS clang)
   # Include system clang here to deal with the rest of the targets
-
-  set(CLANG_BUILD_COMMAND BUILD_COMMAND "${CMAKE_MAKE_PROGRAM} libclang_static -j${nproc}")
-  set(CLANG_INSTALL_COMMAND INSTALL_COMMAND /bin/bash -c "${libclang_install_command}")
   find_package(Clang REQUIRED)
   include_directories(SYSTEM ${CLANG_INCLUDE_DIRS})
 else()
@@ -136,7 +111,7 @@ if(${CROSS_COMPILING_CLANG})
 endif()
 
 clang_platform_config(CLANG_PATCH_COMMAND
-                     "${CLANG_CONFIGURE_FLAGS}"
+                     "${CLANG_CONFIGURE_FLAGS}" # FIXME this is leaky
                       CLANG_BUILD_COMMAND
                       CLANG_INSTALL_COMMAND)
 
