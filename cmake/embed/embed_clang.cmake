@@ -111,6 +111,7 @@ if(${CROSS_COMPILING_CLANG})
 endif()
 
 clang_platform_config(CLANG_PATCH_COMMAND
+                     "${CLANG_LIBRARY_TARGETS}"
                      "${CLANG_CONFIGURE_FLAGS}" # FIXME this is leaky
                       CLANG_BUILD_COMMAND
                       CLANG_INSTALL_COMMAND)

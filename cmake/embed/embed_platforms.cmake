@@ -277,7 +277,7 @@ function(llvm_platform_config patch_cmd configure_flags build_cmd install_cmd)
   set(${install_cmd} "${llvm_install_cmd}" PARENT_SCOPE)
 endfunction(llvm_platform_config patch_cmd configure_flags build_cmd install_cmd)
 
-function(clang_platform_config patch_cmd configure_flags build_cmd install_cmd)
+function(clang_platform_config patch_cmd lib_targets configure_flags build_cmd install_cmd)
   ProcessorCount(nproc)
   # Clang always needs a custom install command, because libclang isn't installed
   # by the all target.
@@ -318,7 +318,7 @@ function(clang_platform_config patch_cmd configure_flags build_cmd install_cmd)
     list(APPEND configure_flags -DANDROID_NATIVE_API_LEVEL=${ANDROID_NATIVE_API_LEVEL})
     list(APPEND configure_flags -DCMAKE_CROSSCOMPILING=True)
 
-    string(REPLACE ";" " " CLANG_MAKE_TARGETS "${CLANG_LIBRARY_TARGETS}" )
+    string(REPLACE ";" " " CLANG_MAKE_TARGETS "${lib_targets}")
     set(clang_build_cmd BUILD_COMMAND /bin/bash -c
         "${CMAKE_MAKE_PROGRAM} -j${nproc} libclang_static && \
          ${CMAKE_MAKE_PROGRAM} -j${nproc} ${CLANG_MAKE_TARGETS}"
