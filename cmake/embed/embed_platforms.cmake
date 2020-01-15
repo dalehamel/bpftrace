@@ -339,4 +339,5 @@ function(clang_platform_config patch_cmd configure_flags build_cmd install_cmd)
   set(CLANG_CONFIGURE_FLAGS "${configure_flags}" PARENT_SCOPE) # FIXME leaky, should the var name be passed separately?
   set(${build_cmd} "${clang_build_cmd}" PARENT_SCOPE)
   set(${install_cmd} "${clang_install_cmd}" PARENT_SCOPE)
+  set(${patch_cmd} "${CLANG_PATCH_COMMAND}" PARENT_SCOPE)
 endfunction(clang_platform_config patch_cmd configure_flags build_cmd install_cmd)
