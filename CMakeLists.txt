@@ -134,13 +134,14 @@ else()
   find_package(LibBcc REQUIRED)
   include_directories(SYSTEM ${LIBBCC_INCLUDE_DIRS})
 
-  check_symbol_exists(bcc_prog_load "${LIBBCC_INCLUDE_DIRS}/libbpf.h" HAVE_BCC_PROG_LOAD)
-  check_symbol_exists(bcc_create_map "${LIBBCC_INCLUDE_DIRS}/libbpf.h" HAVE_BCC_CREATE_MAP)
-  check_symbol_exists(bcc_elf_foreach_sym "${LIBBCC_INCLUDE_DIRS}/bcc_elf.h" HAVE_BCC_ELF_FOREACH_SYM)
-
+  # NOTE thes emust be before the check_symbol_exists calls or they will fail
   set(CMAKE_REQUIRED_LIBRARIES bcc)
   get_filename_component(LIBBCC_LIBDIR ${LIBBCC_LIBRARIES} DIRECTORY)
   set(CMAKE_REQUIRED_LINK_OPTIONS -L${LIBBCC_LIBDIR})
+
+  check_symbol_exists(bcc_prog_load "${LIBBCC_INCLUDE_DIRS}/libbpf.h" HAVE_BCC_PROG_LOAD)
+  check_symbol_exists(bcc_create_map "${LIBBCC_INCLUDE_DIRS}/libbpf.h" HAVE_BCC_CREATE_MAP)
+  check_symbol_exists(bcc_elf_foreach_sym "${LIBBCC_INCLUDE_DIRS}/bcc_elf.h" HAVE_BCC_ELF_FOREACH_SYM)
 
   set(CMAKE_REQUIRED_LIBRARIES)
   set(CMAKE_REQUIRED_LINK_OPTIONS)
