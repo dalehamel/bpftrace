@@ -3,14 +3,6 @@ if(NOT EMBED_CLANG)
 endif()
 include(embed_helpers)
 
-get_host_triple(HOST_TRIPLE)
-get_target_triple(TARGET_TRIPLE)
-
-# FIXME this should probably be in CMakeList.txt as other things need to know?
-if(NOT "${HOST_TRIPLE}" STREQUAL "${TARGET_TRIPLE}")
-  set(CROSS_COMPILING_CLANG ON)
-endif()
-
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(EMBEDDED_BUILD_TYPE "RelWithDebInfo")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -36,11 +28,11 @@ else()
 endif()
 
 if(EMBED_LIBCLANG_ONLY)
-  ProcessorCount(nproc)
-  set(CLANG_LIBRARY_TARGETS clang)
   # Include system clang here to deal with the rest of the targets
   find_package(Clang REQUIRED)
   include_directories(SYSTEM ${CLANG_INCLUDE_DIRS})
+
+  set(CLANG_LIBRARY_TARGETS clang)
 else()
   set(CLANG_LIBRARY_TARGETS
       clang
@@ -85,29 +77,6 @@ set(CLANG_CONFIGURE_FLAGS
 # If LLVM is being embedded, inform Clang to use its Cmake file instead of system
 if(EMBED_LLVM)
   list(APPEND CLANG_CONFIGURE_FLAGS  -DLLVM_DIR=${EMBEDDED_LLVM_INSTALL_DIR}/lib/cmake/llvm)
-endif()
-
-if(${CROSS_COMPILING_CLANG})
-  ProcessorCount(nproc)
-
-  # If cross-compling, a host architecture clang-tblgen is needed, and not
-  # provided by standard packages. Unlike LLVM, clang isn't smart enough to
-  # bootstrap this for itself
-  ExternalProject_Add(embedded_clang_host
-    URL "${CLANG_DOWNLOAD_URL}"
-    URL_HASH "${CLANG_URL_CHECKSUM}"
-    BUILD_COMMAND /bin/bash -c "${CMAKE_MAKE_PROGRAM} -j${nproc} clang-tblgen"
-    INSTALL_COMMAND /bin/bash -c "mkdir -p <INSTALL_DIR>/bin && \
-                                  cp <BINARY_DIR>/bin/clang-tblgen <INSTALL_DIR>/bin"
-    BUILD_BYPRODUCTS <INSTALL_DIR>/bin/clang-tblgen
-    UPDATE_DISCONNECTED 1
-    DOWNLOAD_NO_PROGRESS 1
-  ) # FIXME set build byproducts for ninja
-
-  ExternalProject_Get_Property(embedded_clang_host INSTALL_DIR)
-  set(CLANG_TBLGEN_PATH "${INSTALL_DIR}/bin/clang-tblgen")
-
-  list(APPEND CLANG_CONFIGURE_FLAGS -DCLANG_TABLEGEN=${CLANG_TBLGEN_PATH})
 endif()
 
 clang_platform_config(CLANG_PATCH_COMMAND

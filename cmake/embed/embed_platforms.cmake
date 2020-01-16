@@ -286,26 +286,53 @@ function(clang_platform_config patch_cmd lib_targets configure_flags build_cmd i
       cp <BINARY_DIR>/lib/libclang.a <INSTALL_DIR>/lib/libclang.a"
      )
 
-  set(clang_install_command
-      "${CMAKE_MAKE_PROGRAM} -j ${nproc} install && $\
-       {libclang_install_command}"
+  set(clang_install_cmd INSTALL_COMMAND /bin/bash -c
+      "${CMAKE_MAKE_PROGRAM} -j ${nproc} install && \
+       ${libclang_install_command}"
      )
-  set(CLANG_INSTALL_COMMAND INSTALL_COMMAND /bin/bash -c "${clang_install_command}")
 
   if(NOT EMBED_LLVM)
     # If not linking and building against embedded LLVM, patches may need to
     # be applied to link with the distribution LLVM. This is handled by a
     # helper function
     prepare_clang_patches(patch_command)
-    set(CLANG_PATCH_COMMAND PATCH_COMMAND /bin/bash -c "${patch_command}")
+    set(clang_patch_cmd PATCH_COMMAND /bin/bash -c "${patch_command}")
   endif()
 
   if(EMBED_LIBCLANG_ONLY)
-    set(CLANG_BUILD_COMMAND BUILD_COMMAND "${CMAKE_MAKE_PROGRAM} libclang_static -j${nproc}")
-    set(CLANG_INSTALL_COMMAND INSTALL_COMMAND /bin/bash -c "${libclang_install_command}")
+    set(clang_build_cmd BUILD_COMMAND /bin/bash -c "${CMAKE_MAKE_PROGRAM} libclang_static -j${nproc}")
+    set(clang_install_cmd INSTALL_COMMAND /bin/bash -c "${libclang_install_command}")
   endif()
 
+  get_host_triple(HOST_TRIPLE)
   get_target_triple(TARGET_TRIPLE)
+  if(NOT "${HOST_TRIPLE}" STREQUAL "${TARGET_TRIPLE}")
+    set(CROSS_COMPILING_CLANG ON)
+  endif()
+
+  if(${CROSS_COMPILING_CLANG})
+    ProcessorCount(nproc)
+
+    # If cross-compling, a host architecture clang-tblgen is needed, and not
+    # provided by standard packages. Unlike LLVM, clang isn't smart enough to
+    # bootstrap this for itself
+    ExternalProject_Add(embedded_clang_host
+      URL "${CLANG_DOWNLOAD_URL}"
+      URL_HASH "${CLANG_URL_CHECKSUM}"
+      BUILD_COMMAND /bin/bash -c "${CMAKE_MAKE_PROGRAM} -j${nproc} clang-tblgen"
+      INSTALL_COMMAND /bin/bash -c "mkdir -p <INSTALL_DIR>/bin && \
+                                    cp <BINARY_DIR>/bin/clang-tblgen <INSTALL_DIR>/bin"
+      BUILD_BYPRODUCTS <INSTALL_DIR>/bin/clang-tblgen
+      UPDATE_DISCONNECTED 1
+      DOWNLOAD_NO_PROGRESS 1
+    ) # FIXME set build byproducts for ninja
+
+    ExternalProject_Get_Property(embedded_clang_host INSTALL_DIR)
+    set(CLANG_TBLGEN_PATH "${INSTALL_DIR}/bin/clang-tblgen")
+
+    list(APPEND CLANG_CONFIGURE_FLAGS -DCLANG_TABLEGEN=${CLANG_TBLGEN_PATH})
+  endif()
+
   if(${TARGET_TRIPLE} MATCHES android)
     ProcessorCount(nproc)
 
@@ -339,5 +366,5 @@ function(clang_platform_config patch_cmd lib_targets configure_flags build_cmd i
   set(CLANG_CONFIGURE_FLAGS "${configure_flags}" PARENT_SCOPE) # FIXME leaky, should the var name be passed separately?
   set(${build_cmd} "${clang_build_cmd}" PARENT_SCOPE)
   set(${install_cmd} "${clang_install_cmd}" PARENT_SCOPE)
-  set(${patch_cmd} "${CLANG_PATCH_COMMAND}" PARENT_SCOPE)
+  set(${patch_cmd} "${clang_patch_cmd}" PARENT_SCOPE)
 endfunction(clang_platform_config patch_cmd configure_flags build_cmd install_cmd)
