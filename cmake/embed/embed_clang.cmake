@@ -107,6 +107,12 @@ if (EMBED_LLVM)
   ExternalProject_Add_StepDependencies(embedded_clang install embedded_llvm)
 endif()
 
+get_host_triple(HOST_TRIPLE)
+get_target_triple(TARGET_TRIPLE)
+if(NOT "${HOST_TRIPLE}" STREQUAL "${TARGET_TRIPLE}")
+  set(CROSS_COMPILING_CLANG ON)
+endif()
+
 if(${CROSS_COMPILING_CLANG})
   ExternalProject_Add_StepDependencies(embedded_clang install embedded_clang_host)
 endif()
