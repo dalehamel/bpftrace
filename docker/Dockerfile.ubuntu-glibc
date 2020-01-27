@@ -1,25 +1,34 @@
-FROM ubuntu:bionic
+ARG DISTRO=bionic
 
+FROM ubuntu:${DISTRO}
+
+ARG DISTRO=bionic
 ARG bcc_ref="v0.12.0"
 ARG LLVM_VERSION="8"
+ARG CMAKE_VER="3.16"
+ARG CMAKE_BUILD="2"
+
 ENV LLVM_VERSION=$LLVM_VERSION
+ENV CMAKE_VER=${CMAKE_VER}
+ENV CMAKE_BUILD="${CMAKE_BUILD}"
+ENV DISTRO=${DISTRO}
 
 # There is no need need for most of this once
 # https://github.com/iovisor/bcc/pull/2677 merges, as this is all to build
 # the bcc static dependencies. This would save ~5 minutes of CI time
 RUN apt-get update && apt-get install -y curl gnupg &&\
     llvmRepository="\n\
-deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main\n\
-deb-src http://apt.llvm.org/bionic/ llvm-toolchain-bionic main\n\
-deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-${LLVM_VERSION} main\n\
-deb-src http://apt.llvm.org/bionic/ llvm-toolchain-bionic-${LLVM_VERSION} main\n" &&\
+deb http://apt.llvm.org/${DISTRO}/ llvm-toolchain-${DISTRO} main\n\
+deb-src http://apt.llvm.org/${DISTRO}/ llvm-toolchain-${DISTRO} main\n\
+deb http://apt.llvm.org/${DISTRO}/ llvm-toolchain-${DISTRO}-${LLVM_VERSION} main\n\
+deb-src http://apt.llvm.org/${DISTRO}/ llvm-toolchain-${DISTRO}-${LLVM_VERSION} main\n" &&\
     echo $llvmRepository >> /etc/apt/sources.list && \
     curl -L https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
 
 RUN apt-get update && apt-get install -y \
       bison \
       binutils-dev \
-      cmake \
+      make \
       flex \
       g++ \
       git \
@@ -37,8 +46,24 @@ RUN apt-get update && apt-get install -y \
       llvm-${LLVM_VERSION}-runtime \
       libllvm${LLVM_VERSION} \
       systemtap-sdt-dev \
-      python3 \
-      quilt
+      python \
+      quilt \
+      libssl-dev
+
+# Install from source if using xenial due to incompatibility with older cmake
+RUN if [ "${DISTRO}" = "xenial" ]; then version=${CMAKE_VER} \
+    && build=${CMAKE_BUILD} \
+    && mkdir -p /tmp \
+    && cd /tmp \
+    && curl -OL https://cmake.org/files/v${version}/cmake-${version}.${build}.tar.gz \
+    && tar -xzvf cmake-${CMAKE_VER}.$build.tar.gz \
+    && cd cmake-${CMAKE_VER}.$build/ \
+    && ./bootstrap \
+    && make -j$(nproc) \
+    && make install \
+    ; else \
+    apt install -y cmake \
+    ; fi
 
 # Build BCC and install static libs
 RUN mkdir -p /src && git clone https://github.com/iovisor/bcc /src/bcc
