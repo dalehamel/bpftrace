@@ -330,7 +330,7 @@ function(clang_platform_config patch_cmd lib_targets configure_flags build_cmd i
     ExternalProject_Get_Property(embedded_clang_host INSTALL_DIR)
     set(CLANG_TBLGEN_PATH "${INSTALL_DIR}/bin/clang-tblgen")
 
-    list(APPEND CLANG_CONFIGURE_FLAGS -DCLANG_TABLEGEN=${CLANG_TBLGEN_PATH})
+    list(APPEND configure_flags -DCLANG_TABLEGEN=${CLANG_TBLGEN_PATH})
   endif()
 
   if(${TARGET_TRIPLE} MATCHES android)
