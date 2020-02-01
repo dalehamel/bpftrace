@@ -47,6 +47,8 @@ jobs:
           RUN_ALL_TESTS: 1
           RUNTIME_TEST_DISABLE: builtin.cgroup
     steps:
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v1
     - uses: actions/checkout@v2
     - name: Build docker container
       run: |
@@ -74,3 +76,7 @@ jobs:
       with:
         name: bpftrace_test-${{ matrix.env['TYPE'] }}-${{ matrix.env['NAME'] }}
         path: build-embedded/tests/bpftrace_test
+# To debug weird issues, you can add this step to be able to SSH to the test environment
+#     https://github.com/marketplace/actions/debugging-with-tmate
+#    - name: Setup tmate session
+#      uses: mxschmitt/action-tmate@v1
