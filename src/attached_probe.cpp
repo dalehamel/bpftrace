@@ -776,7 +776,7 @@ void AttachedProbe::attach_usdt(int pid)
 #ifdef BCC_USDT_REF_CTR_OFFSET_SUPPORTED
   if(bcc_usdt_ref_ctr_offset_supported()) {
     perf_event_fd = bpf_attach_usdt_probe(progfd_, attachtype(probe_.type),
-      eventname().c_str(), probe_.path.c_str(), offset_, ref_ctr_offset, pid == 0 ? -1 : pid);
+      eventname().c_str(), probe_.path.c_str(), offset_, loc.ref_ctr_offset, pid == 0 ? -1 : pid);
   } else
 #else
   perf_event_fd = bpf_attach_uprobe(progfd_, attachtype(probe_.type),
