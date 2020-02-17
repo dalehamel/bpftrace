@@ -25,6 +25,7 @@ deb-src http://apt.llvm.org/${DISTRO}/ llvm-toolchain-${DISTRO}-${LLVM_VERSION} 
 RUN apt-get update && apt-get install -y \
       bison \
       binutils-dev \
+      build-essential \
       flex \
       g++ \
       git \
