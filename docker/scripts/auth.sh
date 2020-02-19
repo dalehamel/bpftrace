@@ -14,5 +14,5 @@ git_repo=$1 # github.repository format: ORGNAME/REPONAME
 # Set this to match the name of the bot user on quay.io
 [[ -z "${QUAY_BOT_NAME}" ]] && QUAY_BOT_NAME="bpftrace_buildbot"
 
-quay_user="$(dirname ${git_repo})+${QUAY_BOT_NAME}":
+quay_user="$(dirname ${git_repo})+${QUAY_BOT_NAME}"
 echo "${QUAY_TOKEN}" | docker login -u="${quay_user}" --password-stdin quay.io
