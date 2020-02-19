@@ -78,24 +78,4 @@ jobs:
       if: matrix.env['TYPE'] == 'Release'
       env:
         QUAY_TOKEN: ${{ secrets.QUAY_TOKEN }}
-      run: |
-        [[ -z "${QUAY_TOKEN}" ]] && echo "QUAY_TOKEN not set" && exit 0
-        # Forks can push using this approach if they create a bot user of orgname+bpftrace_buildbot
-        quay_user="$(dirname ${{ github.repository }})+bpftrace_buildbot"
-        echo "${QUAY_TOKEN}" | docker login -u="${quay_user}" --password-stdin quay.io
-        refname=$(basename ${{ github.ref }})
-        typename=$(echo ${{ matrix.env['NAME'] }} | sed 's/+/_/g')
-        docker build -t quay.io/${{ github.repository }}:${{ github.sha }}-${typename} -f docker/Dockerfile.minimal .
-        docker tag quay.io/${{ github.repository }}:${{ github.sha }}-${typename} quay.io/${{ github.repository }}:${refname}-${typename}
-        docker push quay.io/${{ github.repository }}:${{ github.sha }}-${typename}
-        docker push quay.io/${{ github.repository }}:${refname}-${typename}
-
-        [[ "${{ matrix.env['NAME'] }}" != "vanilla_llvm+clang+glibc2.27" ]] && exit 0
-        echo "Pushing default release image for ref ${refname}"
-        docker tag quay.io/${{ github.repository }}:${{ github.sha }}-${typename} quay.io/${{ github.repository }}:${refname}
-        docker push quay.io/${{ github.repository }}:${refname}
-
-        [[ "${refname}" != "master" ]] && exit 0
-        echo "This is a build on master, pushing :latest tag also"
-        docker tag quay.io/${{ github.repository }}:${{ github.sha }}-${typename} quay.io/${{ github.repository }}:latest
-        docker push quay.io/${{ github.repository }}:latest
+      run: ./docker/scripts/push.sh ${{ github.repository }} ${{ github.ref }} ${{ github.sha }}
