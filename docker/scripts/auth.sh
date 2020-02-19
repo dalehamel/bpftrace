@@ -6,6 +6,7 @@
 # Forks can push using this approach if they create a quay.io bot user
 # with name matching of ORGNAME+bpftrace_buildbot, or by setting QUAY_BOT_NAME
 
+git_repo=$1 # github.repository format: ORGNAME/REPONAME
 
 # Set this value as QUAY_TOKEN in the github repository settings "Secrets" tab
 [[ -z "${QUAY_TOKEN}" ]] && echo "QUAY_TOKEN not set" && exit 0
