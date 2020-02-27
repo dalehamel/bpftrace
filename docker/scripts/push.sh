@@ -25,8 +25,8 @@ type_name=$4 # build name, s/+/_/g   eg, vanilla_llvm_clang_glibc2.27
 refname=$(basename ${git_ref})
 
 # The main docker image build, copying the bpftrace artifact on top of a vanilla OS image
-echo "Building minimal release docker image"
-docker build -t ${DOCKER_REPO}/${git_repo}:${git_sha}-${type_name} -f docker/Dockerfile.minimal .
+echo "Building release docker image"
+docker build -t ${DOCKER_REPO}/${git_repo}:${git_sha}-${type_name} -f docker/Dockerfile.release .
 
 echo "Upload image for git sha ${git_sha} to ${DOCKER_REPO}/${git_repo}"
 docker push ${DOCKER_REPO}/${git_repo}:${git_sha}-${type_name}
@@ -36,7 +36,7 @@ docker tag ${DOCKER_REPO}/${git_repo}:${git_sha}-${type_name} ${DOCKER_REPO}/${g
 docker push ${DOCKER_REPO}/${git_repo}:${refname}-${type_name}
 
 # Only push to un-suffixed tags for the default release target build type
-if [[ "${NAME}" == "${DEFAULT_RELEASE_TARGET}" ]];then
+if [[ "${type_name}" == "${DEFAULT_RELEASE_TARGET}" ]];then
   # Update branch / git tag ref
   echo "Pushing tags for ${DOCKER_REPO}/${git_repo}:${refname}"
   docker tag ${DOCKER_REPO}/${git_repo}:${git_sha}-${type_name} ${DOCKER_REPO}/${git_repo}:${refname}
