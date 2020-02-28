@@ -53,7 +53,7 @@ jobs:
           NAME: vanilla_llvm+clang+glibc2.27_edge
           EDGE: ON
           BCC_REF: master
-          LLVM_VERSION: 8
+          LLVM_VERSION: 9
           STATIC_LINKING: ON
           STATIC_LIBC: OFF
           EMBED_LLVM: ON
