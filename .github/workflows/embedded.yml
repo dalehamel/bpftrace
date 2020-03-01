@@ -94,7 +94,6 @@ jobs:
 
     - name: Create gz compressed binary
       env: ${{ matrix.env }}
-      if: matrix.env['TYPE'] == 'Release'
       run: |
         docker run -v $(pwd):$(pwd) -w $(pwd) --entrypoint /bin/bash bpftrace-embedded-${{ matrix.env['DISTRO'] }} -c 'cp build-embedded/src/bpftrace build-embedded/src/bpftrace.gzexe && gzexe build-embedded/src/bpftrace.gzexe'
 
