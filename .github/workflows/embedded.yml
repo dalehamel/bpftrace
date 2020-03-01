@@ -69,24 +69,43 @@ jobs:
     - name: Build docker container
       run: |
         docker build -t bpftrace-embedded-${{ matrix.env['DISTRO'] }} -f docker/Dockerfile.ubuntu-glibc --build-arg bcc_ref=${{ matrix.env['BCC_REF'] }} --build-arg DISTRO=${{ matrix.env['DISTRO'] }}  docker/
+    - name: build bpftrace embedded dependencies
+      env: ${{ matrix.env }}
+      run: |
+        docker run -v $(pwd):$(pwd) -w $(pwd) -v /sys/kernel/debug:/sys/kernel/debug:rw -v /lib/modules:/lib/modules:ro -v /usr/src:/usr/src:ro -e STATIC_LINKING=${STATIC_LINKING} -e STATIC_LIBC=${STATIC_LIBC} -e EMBED_LLVM=${EMBED_LLVM} -e EMBED_CLANG=${EMBED_CLANG} -e EMBED_BCC=${EMBED_BCC} -e EMBED_LIBELF=${EMBED_LIBELF} -e EMBED_LIBCLANG_ONLY=${EMBED_LIBCLANG_ONLY} -e EMBED_BINUTILS=${EMBED_BINUTILS} -e DEPS_ONLY=ON -e RUN_TESTS=OFF -e CMAKE_EXTRA_FLAGS="${CMAKE_EXTRA_FLAGS}" bpftrace-embedded-${{ matrix.env['DISTRO'] }} $(pwd)/build-embedded ${TYPE} bpftrace -j`nproc`
+
     - name: bpftrace embedded build
       env: ${{ matrix.env }}
       run: |
-        docker run --privileged -v $(pwd):$(pwd) -w $(pwd) -v /sys/kernel/debug:/sys/kernel/debug:rw -v /lib/modules:/lib/modules:ro -v /usr/src:/usr/src:ro -e STATIC_LINKING=${STATIC_LINKING} -e STATIC_LIBC=${STATIC_LIBC} -e EMBED_LLVM=${EMBED_LLVM} -e EMBED_CLANG=${EMBED_CLANG} -e EMBED_BCC=${EMBED_BCC} -e EMBED_LIBELF=${EMBED_LIBELF} -e EMBED_LIBCLANG_ONLY=${EMBED_LIBCLANG_ONLY} -e EMBED_BINUTILS=${EMBED_BINUTILS} -e RUN_ALL_TESTS=${RUN_ALL_TESTS} -e CMAKE_EXTRA_FLAGS="${CMAKE_EXTRA_FLAGS}" -e RUNTIME_TEST_DISABLE="${RUNTIME_TEST_DISABLE}" bpftrace-embedded-${{ matrix.env['DISTRO'] }} $(pwd)/build-embedded ${TYPE} -j`nproc`
+        docker run -v $(pwd):$(pwd) -w $(pwd) -v /sys/kernel/debug:/sys/kernel/debug:rw -v /lib/modules:/lib/modules:ro -v /usr/src:/usr/src:ro -e STATIC_LINKING=${STATIC_LINKING} -e STATIC_LIBC=${STATIC_LIBC} -e EMBED_LLVM=${EMBED_LLVM} -e EMBED_CLANG=${EMBED_CLANG} -e EMBED_BCC=${EMBED_BCC} -e EMBED_LIBELF=${EMBED_LIBELF} -e EMBED_LIBCLANG_ONLY=${EMBED_LIBCLANG_ONLY} -e EMBED_BINUTILS=${EMBED_BINUTILS} -e RUN_TESTS=OFF -e CMAKE_EXTRA_FLAGS="${CMAKE_EXTRA_FLAGS}" bpftrace-embedded-${{ matrix.env['DISTRO'] }} $(pwd)/build-embedded ${TYPE} -j`nproc`
+    - name: bpftrace tests
+      env: ${{ matrix.env }}
+      run: |
+        docker run --net=host --pid=host --privileged -v $(pwd):$(pwd) -w $(pwd) -v /sys/kernel/debug:/sys/kernel/debug:rw -v /lib/modules:/lib/modules:ro -v /usr/src:/usr/src:ro -e STATIC_LINKING=${STATIC_LINKING} -e STATIC_LIBC=${STATIC_LIBC} -e EMBED_LLVM=${EMBED_LLVM} -e EMBED_CLANG=${EMBED_CLANG} -e EMBED_BCC=${EMBED_BCC} -e EMBED_LIBELF=${EMBED_LIBELF} -e EMBED_LIBCLANG_ONLY=${EMBED_LIBCLANG_ONLY} -e EMBED_BINUTILS=${EMBED_BINUTILS} -e RUN_ALL_TESTS=${RUN_ALL_TESTS} -e CMAKE_EXTRA_FLAGS="${CMAKE_EXTRA_FLAGS}" -e RUNTIME_TEST_DISABLE="${RUNTIME_TEST_DISABLE}" bpftrace-embedded-${{ matrix.env['DISTRO'] }} $(pwd)/build-embedded ${TYPE} -j`nproc`
     - name: Check linked libs
       env: ${{ matrix.env }}
       run: |
-        docker run --privileged -v $(pwd):$(pwd) -w $(pwd) -v /sys/kernel/debug:/sys/kernel/debug:rw -v /lib/modules:/lib/modules:ro -v /usr/src:/usr/src:ro -e STATIC_LINKING=${STATIC_LINKING} -e STATIC_LIBC=${STATIC_LIBC} -e EMBED_LLVM=${EMBED_LLVM} -e EMBED_CLANG=${EMBED_CLANG} -e EMBED_BCC=${EMBED_BCC} -e EMBED_LIBELF=${EMBED_LIBELF} -e EMBED_LIBCLANG_ONLY=${EMBED_LIBCLANG_ONLY} -e EMBED_BINUTILS=${EMBED_BINUTILS} --entrypoint /bin/bash bpftrace-embedded-${{ matrix.env['DISTRO'] }} -c "[[ -f $(pwd)/build-embedded/src/bpftrace ]] && ! readelf --dynamic $(pwd)/build-embedded/src/bpftrace | grep NEEDED | grep -v 'libm\|libc\|ld-linux\|libpthread\|libdl'"
+        docker run -v $(pwd):$(pwd) --entrypoint /bin/bash bpftrace-embedded-${{ matrix.env['DISTRO'] }} -c "[[ -f $(pwd)/build-embedded/src/bpftrace ]] && ! readelf --dynamic $(pwd)/build-embedded/src/bpftrace | grep NEEDED | grep -v 'libm\|libc\|ld-linux\|libpthread\|libdl'"
     - name: Strip artifacts
       env: ${{ matrix.env }}
       if: matrix.env['TYPE'] == 'Release'
       run: |
-        docker run --privileged -v $(pwd):$(pwd) -w $(pwd) -v /sys/kernel/debug:/sys/kernel/debug:rw -v /lib/modules:/lib/modules:ro -v /usr/src:/usr/src:ro -e STATIC_LINKING=${STATIC_LINKING} -e STATIC_LIBC=${STATIC_LIBC} -e EMBED_LLVM=${EMBED_LLVM} -e EMBED_CLANG=${EMBED_CLANG} -e EMBED_BCC=${EMBED_BCC} -e EMBED_LIBELF=${EMBED_LIBELF} -e EMBED_LIBCLANG_ONLY=${EMBED_LIBCLANG_ONLY} -e EMBED_BINUTILS=${EMBED_BINUTILS} --entrypoint /bin/bash bpftrace-embedded-${{ matrix.env['DISTRO'] }} -c "strip --keep-symbol BEGIN_trigger $(pwd)/build-embedded/src/bpftrace"
+        docker run -v $(pwd):$(pwd) -w $(pwd) --entrypoint /bin/bash bpftrace-embedded-${{ matrix.env['DISTRO'] }} -c "strip --keep-symbol BEGIN_trigger $(pwd)/build-embedded/src/bpftrace"
+
+    - name: Create gz compressed binary
+      env: ${{ matrix.env }}
+      if: matrix.env['TYPE'] == 'Release'
+      run: |
+        docker run -v $(pwd):$(pwd) -w $(pwd) --entrypoint /bin/bash bpftrace-embedded-${{ matrix.env['DISTRO'] }} -c 'cp build-embedded/src/bpftrace build-embedded/src/bpftrace.gzexe && gzexe build-embedded/src/bpftrace.gzexe'
 
     - uses: actions/upload-artifact@v1
       with:
         name: bpftrace-${{ matrix.env['TYPE'] }}-${{ matrix.env['NAME'] }}
         path: build-embedded/src/bpftrace
+    - uses: actions/upload-artifact@v1
+      with:
+        name: bpftrace-${{ matrix.env['TYPE'] }}-${{ matrix.env['NAME'] }}.gzexe
+        path: build-embedded/src/bpftrace.gzexe
     - uses: actions/upload-artifact@v1
       with:
         name: bpftrace_test-${{ matrix.env['TYPE'] }}-${{ matrix.env['NAME'] }}
