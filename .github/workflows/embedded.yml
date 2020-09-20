@@ -238,8 +238,7 @@ jobs:
     - name: Package docker image and push to quay.io
       if: >
         matrix.env['TYPE'] == 'Release' &&
-        (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')) &&
-        github.repository == 'iovisor/bpftrace'
+        (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
       run: >
         ./docker/scripts/push.sh
         ${{ github.repository }}
